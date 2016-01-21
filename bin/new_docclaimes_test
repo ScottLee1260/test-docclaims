@@ -1,0 +1,66 @@
+#!/usr/bin/perl
+
+use 5.008;
+use strict;
+use warnings;
+use Getopt::Long;
+use Pod::Usage;
+
+use Test::DocClaims::Documentation;
+
+Getopt::Long::Configure(qw(bundling_override));
+GetOptions(
+    'help|?' => sub { pod2usage(1) },
+    'man' => sub { pod2usage(-verbose => 2), exit 0 },
+    'skip!' => \(my $skip = 1),
+    ) or pod2usage(2);
+pod2usage "ERROR: missing arg" if @ARGV < 1;
+
+my $prefix = "#@";
+$prefix = "#?" if $skip;
+
+foreach my $path (@ARGV) {
+    my $doc = Test::DocClaims::Documentation->new($path);
+    while (1) {
+        my $line = $doc->current_line;
+        my $text = $line->text;
+        chomp $text;
+        print "$prefix $text\n";
+        last unless $doc->next_line;
+    }
+}
+
+__END__
+
+=head1 NAME
+
+sample - Using GetOpt::Long and Pod::Usage
+
+=head1 SYNOPSIS
+
+sample [-help] [-man]
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-help>
+
+Print a short usage synopsis (also -?).
+
+=item B<-man>
+
+Print the full command manual entry.
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read the given input files and do something
+useful with the contents thereof.
+
+=head1 FOOBAR
+
+This is a test.
+
+=cut
