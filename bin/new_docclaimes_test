@@ -11,9 +11,9 @@ use Test::DocClaims::Documentation;
 Getopt::Long::Configure(qw(bundling_override));
 GetOptions(
     'help|?' => sub { pod2usage(1) },
-    'man' => sub { pod2usage(-verbose => 2), exit 0 },
-    'skip!' => \(my $skip = 1),
-    ) or pod2usage(2);
+    'man'    => sub { pod2usage( -verbose => 2 ), exit 0 },
+    'skip!' => \( my $skip = 1 ),
+) or pod2usage(2);
 pod2usage "ERROR: missing arg" if @ARGV < 1;
 
 my $prefix = "#@";

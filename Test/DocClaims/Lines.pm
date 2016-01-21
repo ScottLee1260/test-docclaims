@@ -24,9 +24,9 @@ use Test::DocClaims::Line;
 
 sub new {
     my $class = shift;
-    my $self  = bless {}, ref($class) || $class;
-    $self->{lines}    = [];
-    $self->{current}  = 0;
+    my $self = bless {}, ref($class) || $class;
+    $self->{lines}     = [];
+    $self->{current}   = 0;
     $self->{this_line} = {};
     foreach my $path (@_) {
         $self->add_file($path);
@@ -52,9 +52,9 @@ sub add_file {
 # Take an array of lines and convert to an array of Test::DocClaims::Line
 # objects and add them to the list.
 sub add_lines {
-    my $self   = shift;
-    my $lines   = shift;
-    my $path    = shift;
+    my $self  = shift;
+    my $lines = shift;
+    my $path  = shift;
     my %attrs = $self->file_pre( $lines, \$path );
     $attrs{path}     = $path unless defined $attrs{path};
     $attrs{type}     = ""    unless defined $attrs{type};
@@ -88,7 +88,7 @@ sub new_line {
 }
 
 sub file_pre {
-    my $self = shift;
+    my $self  = shift;
     my $lines = shift;
     my $path  = shift;
     my %attrs;
@@ -123,7 +123,7 @@ sub context {
     my $offset = shift;
     my $count  = shift;
     $count = 1 unless defined $count;
-    my $size = scalar( @{ $self->{lines} } );
+    my $size  = scalar( @{ $self->{lines} } );
     my $first = $self->{current} + $offset;
     my $last  = $self->{current} + $offset + $count - 1;
     $first = 0 if $first < 0;

@@ -39,11 +39,11 @@ sub next_line {
 }
 
 sub file_pre {
-    my $self = shift;
+    my $self  = shift;
     my $lines = shift;
     my $path  = shift;
-    my %attrs = $self->SUPER::file_pre(
-        $lines, $path ) if $self->can("SUPER::file_pre");
+    my %attrs = $self->SUPER::file_pre( $lines, $path )
+        if $self->can("SUPER::file_pre");
     $self->{parse_pod} = $attrs{type} && $attrs{type} =~ /^(perl|pod)$/;
     $self->{in_pod} = 0;
     return %attrs;
@@ -55,8 +55,8 @@ sub line_pre {
         if ( $self->{this_line}{text} =~ /^=(\S+)/ ) {
             my $cmd = $1;
             if ( $cmd eq "pod" ) {
-                $self->{this_line} = {}; # discard this line
-                $self->{in_pod} = 1;
+                $self->{this_line} = {};    # discard this line
+                $self->{in_pod}    = 1;
             } elsif ( $cmd eq "cut" ) {
                 $self->{in_pod} = 0;
             } else {

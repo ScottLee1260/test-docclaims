@@ -75,7 +75,7 @@ __END__
 
 =head1 NAME
 
-Test::DocClaims - Assure that the calimes in the documentations are tested
+Test::DocClaims - Help assure that documentation claims are tested
 
 =head1 SYNOPSIS
 

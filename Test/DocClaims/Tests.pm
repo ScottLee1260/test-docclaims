@@ -19,7 +19,7 @@ our @ISA = qw< Test::DocClaims::Lines >;
 
 sub match {
     my $self = shift;
-    my $doc = shift;
+    my $doc  = shift;
     # ???
 }
 

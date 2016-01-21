@@ -18,7 +18,7 @@ use Carp;
 #   {...}      other attributes
 
 use overload
-    '""'   => 'text',
+    '""' => 'text',
     ;
 
 sub new {
