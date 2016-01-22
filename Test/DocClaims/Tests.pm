@@ -20,7 +20,55 @@ our @ISA = qw< Test::DocClaims::Lines >;
 sub match {
     my $self = shift;
     my $doc  = shift;
-    # ???
+    my $skip = 0;
+
+    # Skip blank lines in both files.
+    {
+        if ( $doc->current_line->text =~ /^\s*$/ ) {
+            return () unless $doc->advance_line;
+            redo;
+        }
+        if ( ref $self->current_line && $self->current_line->text =~ /^(#[@?] )?\s*$/ ) {
+            redo if $self->advance_line;
+        }
+    }
+
+    my $doc_line  = $doc->current_line->text;
+    $doc_line  =~ s/^\s+|\s+$//g;
+    if ( !ref $self->current_line ) {
+        return (
+            "     got: missing",
+            "in " . $self->prev_line->path,
+            "expected: '$doc_line'",
+            "at " . $doc->current_line->path .
+                " line " . $doc->current_line->lnum,
+            );
+    }
+    my $test_line = $self->current_line->text;
+    if ( $test_line  =~ s/^#([@?]) // ) {
+        $skip = 1 if $1 eq "?";
+    }
+    $test_line =~ s/^\s+|\s+$//g;
+#print STDERR "??? doc_line='$doc_line'\n";
+#print STDERR "   test_line='$test_line'\n";
+    # TODO report skipped test if $skip
+    return () if $doc_line eq $test_line;
+
+    return (
+        "     got: '$test_line'",
+            "at " . $self->current_line->path .
+                " line " . $self->current_line->lnum,
+        "expected: '$doc_line'",
+            "at " . $doc->current_line->path .
+                " line " . $doc->current_line->lnum,
+        );
+}
+
+sub clean_line {
+    my $lines = shift;
+    my $text  = $lines->current_line->text;
+    $text =~ s/^\s+|\s+$//g;
+    return $text;
 }
 
 1;

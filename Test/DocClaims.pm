@@ -64,7 +64,8 @@ sub doc_claims {
             $tb->diag( map { "    $_\n" } @error );
             return $fail;
         }
-        last unless $doc->next_line;
+        last unless $doc->advance_line;
+        $test->advance_line;
     }
     return $tb->ok( 1, $name );
 }

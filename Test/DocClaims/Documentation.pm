@@ -25,49 +25,6 @@ our @ISA = qw< Test::DocClaims::Lines >;
 #   {parse_pod} true if this file can have POD
 #   {in_pod}    true if current line is POD
 
-sub next_line {
-    my $self = shift;
-    $self->{current}++;
-
-    ## Skip blank lines.
-    #while ( $self->{current} < scalar @{ $self->{lines} } ) {
-    #    last if $self->{lines}[ $self->{current} ]->text =~ /\S/;
-    #    $self->{current}++;
-    #}
-
-    return $self->{current} < scalar @{ $self->{lines} };
-}
-
-sub file_pre {
-    my $self  = shift;
-    my $lines = shift;
-    my $path  = shift;
-    my %attrs = $self->SUPER::file_pre( $lines, $path )
-        if $self->can("SUPER::file_pre");
-    $self->{parse_pod} = $attrs{type} && $attrs{type} =~ /^(perl|pod)$/;
-    $self->{in_pod} = 0;
-    return %attrs;
-}
-
-sub line_pre {
-    my $self = shift;
-    if ( $self->{parse_pod} ) {
-        if ( $self->{this_line}{text} =~ /^=(\S+)/ ) {
-            my $cmd = $1;
-            if ( $cmd eq "pod" ) {
-                $self->{this_line} = {};    # discard this line
-                $self->{in_pod}    = 1;
-            } elsif ( $cmd eq "cut" ) {
-                $self->{in_pod} = 0;
-            } else {
-                $self->{in_pod} = 1;
-            }
-        }
-        $self->{this_line}{type} = "pod" if $self->{in_pod};
-        $self->{this_line} = {} unless $self->{in_pod};
-    }
-}
-
 1;
 
 __END__
