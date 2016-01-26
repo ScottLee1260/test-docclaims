@@ -8,7 +8,6 @@ package Test::DocClaims::Line;
 use 5.008;
 use strict;
 use warnings;
-use Carp;
 
 # Keys in the blessed hash
 #   {text}     text of the line
@@ -19,31 +18,35 @@ use Carp;
 
 use overload
     '""' => 'text',
+    'bool' => sub { 1 },
     ;
 
 sub new {
     my $class = shift;
     my %attr  = @_;
     my $self  = bless \%attr, ref($class) || $class;
-    foreach my $a (qw< text path lnum >) {
-        croak "missing $a key in " . __PACKAGE__ . "->new"
-            unless exists $self->{$a};
+    foreach my $k (qw< file text lnum orig >) {
+        die "missing $k key in " . __PACKAGE__ . "->new"
+            unless exists $self->{$k};
+    }
+    die "'file' key in " . __PACKAGE__ . "->new is not hash"
+        unless exists $self->{file};
+    foreach my $k (qw< path type has_pod >) {
+        die "missing $k key in " . __PACKAGE__ . "->new file hash"
+            unless exists $self->{file}{$k};
     }
     return $self;
 }
 
-sub attr {
-    my $self = shift;
-    my $attr = shift;
-    my $old  = $self->{$attr};
-    $self->{$attr} = shift if @_;
-    return $old;
-}
+sub path    { $_[0]->{file}{path} }
+sub type    { $_[0]->{file}{type} }
+sub has_pod { $_[0]->{file}{has_pod} }
 
-sub text { my $self = shift; $self->attr( "text", @_ ) }
-sub path { my $self = shift; $self->attr( "path", @_ ) }
-sub lnum { my $self = shift; $self->attr( "lnum", @_ ) }
-sub type { my $self = shift; $self->attr( "type", @_ ) }
+sub lnum    { $_[0]->{lnum} }
+sub text    { $_[0]->{text} }
+sub orig    { $_[0]->{orig} }
+sub comment { $_[0]->{comment} }
+sub is_pod  { $_[0]->{is_pod} }
 
 1;
 
