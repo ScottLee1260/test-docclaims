@@ -23,8 +23,8 @@ sub new {
     my $class     = shift;
     my $file_spec = shift;
     my $self      = bless {}, ref($class) || $class;
-    $self->{lines}     = [];
-    $self->{current}   = 0;
+    $self->{lines}   = [];
+    $self->{current} = 0;
     foreach my $attrs ( $self->_file_spec_to_list($file_spec) ) {
         $self->_add_file($attrs);
     }
@@ -36,12 +36,12 @@ sub new {
 sub _file_spec_to_list {
     my $self = shift;
     my $arg  = shift;
-    $arg = [ $arg ] unless ref $arg eq "ARRAY";
+    $arg = [$arg] unless ref $arg eq "ARRAY";
     foreach my $item (@$arg) {
         if ( ref $item eq "HASH" ) {
             croak "file spec is hash, but it has no 'path' key"
                 unless length $item->{path};
-            my %default = $self->_attrs_of_file($item->{path});
+            my %default = $self->_attrs_of_file( $item->{path} );
             foreach my $key ( keys %default ) {
                 $item->{$key} = $default{$key} unless defined $item->{$key};
             }
@@ -102,7 +102,7 @@ sub _add_file {
     my $self  = shift;
     my $attrs = shift;
     if ( open my $fh, "<", $attrs->{path} ) {
-        my $lnum = 0;
+        my $lnum  = 0;
         my @lines = <$fh>;
         close $fh;
         my $is_pod = 0;
@@ -116,7 +116,7 @@ sub _add_file {
                 if ( $text =~ /^=(\w+)/ ) {
                     my $cmd = $1;
                     if ( $cmd eq "pod" ) {
-                        $hash{is_pod} = 0; # pod starts with next line
+                        $hash{is_pod} = 0;    # pod starts with next line
                         $is_pod = 1;
                     } elsif ( $cmd eq "cut" ) {
                         $hash{is_pod} = 0;
@@ -127,7 +127,7 @@ sub _add_file {
                     }
                 }
             }
-            $text =~ s/\s+$//; # remove CRLF, NL and trailing white space
+            $text =~ s/\s+$//;    # remove CRLF, NL and trailing white space
             $text =~ s/^\s+/ / if !$attrs->{white};
             $hash{text} = $text;
             $hash{file} = $attrs;

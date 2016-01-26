@@ -17,7 +17,7 @@ use warnings;
 #   {...}      other attributes
 
 use overload
-    '""' => 'text',
+    '""'   => 'text',
     'bool' => sub { 1 },
     ;
 

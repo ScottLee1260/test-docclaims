@@ -56,7 +56,7 @@ sub doc_claims {
         next if $test_line->text eq $doc_line->text;
         # ???
 
-        return _diff_error( $test_line, $doc_line, $name ); 
+        return _diff_error( $test_line, $doc_line, $name );
     } continue {
         $test->advance_line;
         $doc->advance_line;
@@ -64,7 +64,7 @@ sub doc_claims {
 #warn "??? advance_line\n";
     }
     if ( !$test->is_eof || !$doc->is_eof ) {
-        return _diff_error( $test->current_line, $doc->current_line, $name ); 
+        return _diff_error( $test->current_line, $doc->current_line, $name );
     } else {
         my $tb = Test::DocClaims->builder;
         return $tb->ok( 1, $name );
