@@ -48,7 +48,6 @@ sub _file_spec_to_list {
         } else {
             $item = { path => $item, $self->_attrs_of_file($item) };
         }
-        croak "no such file: $item->{path}" unless -f $item->{path};
     }
     return @$arg;
 }
@@ -101,42 +100,54 @@ sub _attrs_of_file {
 sub _add_file {
     my $self  = shift;
     my $attrs = shift;
-    if ( open my $fh, "<", $attrs->{path} ) {
-        my $lnum  = 0;
-        my @lines = <$fh>;
-        close $fh;
-        my $is_pod = 0;
-        foreach my $text (@lines) {
-            my %hash = ( orig => $text, lnum => ++$lnum );
-            if ( $attrs->{test} && $text =~ s/^(#[@?]) // ) {
-                $hash{comment} = $1;
-            }
-            if ( $attrs->{has_pod} ) {
-                $hash{is_pod} = $is_pod;
-                if ( $text =~ /^=(\w+)/ ) {
-                    my $cmd = $1;
-                    if ( $cmd eq "pod" ) {
-                        $hash{is_pod} = 0;    # pod starts with next line
-                        $is_pod = 1;
-                    } elsif ( $cmd eq "cut" ) {
-                        $hash{is_pod} = 0;
-                        $is_pod = 0;
-                    } else {
-                        $hash{is_pod} = 1;
-                        $is_pod = 1;
-                    }
+    my $lines = $self->_read_file($attrs->{path});
+    my $lnum  = 0;
+    my $is_pod = 0;
+    my $flag = "";
+    foreach my $text (@$lines) {
+        my %hash = ( orig => $text, lnum => ++$lnum );
+        if ( $attrs->{test} && $text =~ s/^\s*(#([@?])([a-z]*))( |$)// ) {
+            my ( $comment, $char2, $f ) = ( $1, $2, $3 );
+            $hash{comment} = $comment;
+            $flag = $f;
+        } elsif ( $attrs->{has_pod} ) {
+            $hash{is_pod} = $is_pod;
+            if ( $text =~ /^=(\w+)/ ) {
+                my $cmd = $1;
+                if ( $cmd eq "pod" ) {
+                    $hash{is_pod} = 0;    # pod starts with next line
+                    $is_pod = 1;
+                } elsif ( $cmd eq "cut" ) {
+                    $hash{is_pod} = 0;
+                    $is_pod = 0;
+                } else {
+                    $hash{is_pod} = 1;
+                    $is_pod = 1;
                 }
+                $flag = "";
             }
-            $text =~ s/\s+$//;    # remove CRLF, NL and trailing white space
-            $text =~ s/^\s+/ / if !$attrs->{white};
-            $hash{text} = $text;
-            $hash{file} = $attrs;
-            push @{ $self->{lines} }, Test::DocClaims::Line->new(%hash);
         }
-    } else {
-        croak "cannot read $attrs->{path}: $!";
+        $hash{flag} = $flag;
+        $text =~ s/\s+$//;    # remove CRLF, NL and trailing white space
+        $text =~ s/^\s+/ / if !$attrs->{white};
+        $hash{text} = $text;
+        $hash{file} = $attrs;
+        push @{ $self->{lines} }, Test::DocClaims::Line->new(%hash);
     }
     return $self;
+}
+
+sub _read_file {
+    my $self = shift;
+    my $path = shift;
+    my @lines;
+    if ( open my $fh, "<", $path ) {
+        @lines = <$fh>;
+        close $fh;
+    } else {
+        croak "cannot read $path: $!\n";
+    }
+    return \@lines;
 }
 
 sub is_eof {

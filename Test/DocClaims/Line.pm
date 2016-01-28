@@ -47,6 +47,7 @@ sub text    { $_[0]->{text} }
 sub orig    { $_[0]->{orig} }
 sub comment { $_[0]->{comment} }
 sub is_pod  { $_[0]->{is_pod} }
+sub flag    { $_[0]->{flag} }
 
 1;
 
