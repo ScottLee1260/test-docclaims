@@ -25,23 +25,24 @@ is_deeply( \@results, [
 no warnings 'redefine';
 use Carp;
 
-my %files;
+my $files;
 
 sub Test::DocClaims::Lines::_read_file {
     my $self = shift;
     my $path = shift;
-    if ( exists $files{$path} ) {
-        return [ split /^/, $files{$path} ];
+    if (!$files) {
+        my @list = split /^FILE:<(.+?)>.*$/m, join "", <DATA>;
+        $files = { @list[1 .. $#list] }; # remove leading null element
+    }
+    if ( exists $files->{$path} ) {
+        return [ split /^/, $files->{$path} ];
     } else {
         croak "cannot read $path: no such file\n";
     }
 }
 
-INIT {
-%files = (
-
-#-----------------------------------------------------------------------------
-"Something/Foo.pm" => <<'EOF',
+__DATA__
+FILE:<Something/Foo.pm>-------------------------------------------------------
 package Foo;
 
 use strict;
@@ -87,10 +88,7 @@ I was once told that all programs with more than ten lines have a bug.
 =cut
 
 1;
-EOF
-
-#-----------------------------------------------------------------------------
-"t/90-DocClaims-Foo.t" => <<'EOF',
+FILE:<t/90-DocClaims-Foo.t>---------------------------------------------------
 #!perl
 
 use strict;
@@ -137,8 +135,3 @@ isa_ok($foo, "Something::Foo", "constructor works");
 I was once told that all programs with more than ten lines have a bug.
 
 =cut
-
-EOF
-
-);
-}
