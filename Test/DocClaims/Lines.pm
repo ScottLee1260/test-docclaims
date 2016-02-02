@@ -100,7 +100,7 @@ sub _attrs_of_file {
 sub _add_file {
     my $self  = shift;
     my $attrs = shift;
-    my $lines = $self->_read_file($attrs->{path});
+    my $lines = _read_file($attrs->{path});
     my $lnum  = 0;
     my $is_pod = 0;
     my $flag = "";
@@ -138,14 +138,14 @@ sub _add_file {
 }
 
 sub _read_file {
-    my $self = shift;
     my $path = shift;
+    warn "??? _read_file('$path')\n";
     my @lines;
     if ( open my $fh, "<", $path ) {
         @lines = <$fh>;
         close $fh;
     } else {
-        croak "cannot read $path: $!\n";
+        die "cannot read $path: $!\n";
     }
     return \@lines;
 }

@@ -3,43 +3,16 @@
 use strict;
 use warnings;
 use Test::More tests => 2;
+use lib "t/lib";
+use TestTester;
 
 BEGIN { use_ok("Test::DocClaims"); }
 
-my @results;
-sub _ok   { push @results, [ "ok", $_[1], $_[2] ]; }
-sub _diag { push @results, [ "diag", $_[1] ]; }
-
-{
-    no strict "refs";
-    no warnings "redefine";
-    local *{"Test::Builder::ok"}   = \&_ok;
-    local *{"Test::Builder::diag"} = \&_diag;
+findings_match( sub {
     doc_claims( "t/90-DocClaims-Foo.t", "Something/Foo.pm", "run test" );
-}
-is_deeply( \@results, [
-    ["ok", 1, "run test"],
-], "no errors" ) or diag explain @results;
-
-#-----------------------------------------------------------------------------
-no warnings 'redefine';
-use Carp;
-
-my $files;
-
-sub Test::DocClaims::Lines::_read_file {
-    my $self = shift;
-    my $path = shift;
-    if (!$files) {
-        my @list = split /^FILE:<(.+?)>.*$/m, join "", <DATA>;
-        $files = { @list[1 .. $#list] }; # remove leading null element
-    }
-    if ( exists $files->{$path} ) {
-        return [ split /^/, $files->{$path} ];
-    } else {
-        croak "cannot read $path: no such file\n";
-    }
-}
+}, [
+    ["ok", "run test"],
+]);
 
 __DATA__
 FILE:<Something/Foo.pm>-------------------------------------------------------
