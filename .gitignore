@@ -1,0 +1,8 @@
+MANIFEST
+MYMETA.json
+MYMETA.yml
+Makefile
+Makefile.old
+Test-DocClaims-*.tar*
+blib/
+pm_to_blib
