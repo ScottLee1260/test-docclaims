@@ -3,17 +3,41 @@
 use strict;
 use warnings;
 use lib "lib";
-use Test::More tests => 2;
+use Test::More tests => 3;
 use lib "t/lib";
 use TestTester;
 
 BEGIN { use_ok("Test::DocClaims"); }
 
-findings_match( sub {
+our %files = %{ files_from_data() };
+
+{
+local %files = %files;
+$files{"Something/Foo.pm"} =~ s/example Perl module/example Perl module./;
+findings_match( \%files, sub {
     doc_claims( "t/90-DocClaims-Foo.t", "Something/Foo.pm", "run test" );
 }, [
-    ["ok", "run test"],
+    ["not ok", "run test"],
+    "    at t/90-DocClaims-Foo.t line 10",
+    "         got: 'Something::Foo - An example Perl module'",
+    "    expected: 'Something::Foo - An example Perl module.'",
+    "    at Something/Foo.pm line 9",
 ]);
+}
+
+{
+local %files = %files;
+$files{"t/90-DocClaims-Foo.t"} =~ s/example Perl module/example Perl module./;
+findings_match( \%files, sub {
+    doc_claims( "t/90-DocClaims-Foo.t", "Something/Foo.pm", "run test" );
+}, [
+    ["not ok", "run test"],
+    "    at t/90-DocClaims-Foo.t line 10",
+    "         got: 'Something::Foo - An example Perl module.'",
+    "    expected: 'Something::Foo - An example Perl module'",
+    "    at Something/Foo.pm line 9",
+]);
+}
 
 __DATA__
 FILE:<Something/Foo.pm>-------------------------------------------------------

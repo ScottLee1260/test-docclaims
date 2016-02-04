@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use lib "lib";
 use Test::More tests => 173;
 
 BEGIN { use_ok('Test::DocClaims::Lines'); }
