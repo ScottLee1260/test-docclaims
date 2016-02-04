@@ -1,18 +1,14 @@
 package Test::DocClaims;
 
-# Copyright (c) 2009-2016 Scott E. Lee. All rights reserved.
-# This program my be used under the Perl License OR the MIT License.
-# This program is free software. You may copy or redistribute it under the
-# same terms as Perl itself.
+# Copyright (C) 2009-2016 Scott E. Lee
 
-use 5.008;
+use 5.008009;
 use strict;
 use warnings;
 use Carp;
 
 use Test::DocClaims::Lines;
-
-our $VERSION = 0.001;
+our $VERSION = '0.01';
 
 use Test::Builder::Module;
 our @ISA    = qw< Test::Builder::Module >;
@@ -130,10 +126,18 @@ Like the cmp Perl built in, it returns -1, 0 or 1.
 
 =back
 
-=head1 BUGS
-
 =head1 SEE ALSO
 
-=head1 COPYRIGHT
+=head1 AUTHOR
 
-Copyright (c) Scott E. Lee
+Scott E. Lee, E<lt>ScottLee@cpan.org<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2009-2016 by Scott E. Lee
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.18.2 or,
+at your option, any later version of Perl 5 you may have available.
+
+=cut
