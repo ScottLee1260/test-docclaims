@@ -5,22 +5,27 @@ package TestTester;
 # This program is free software. You may copy or redistribute it under the
 # same terms as Perl itself.
 
+# How do you test a test module? Simple. Just override the methods in
+# Test::Builder used to report status and instead of printing the status,
+# put it into an array of findings. Then compare that array of findings to
+# an array of expected findings. That is how this module works.
+
 use strict;
 use warnings;
 
 use base qw( Exporter );
 our @EXPORT = qw< files_from_data findings_match >;
 
-my $files;
-
 # Read a set of files from the __DATA__ section into a hash and return a
-# ref to this hash.
+# ref to this hash. This can be used as the first parameter to
+# findings_match().
 sub files_from_data {
-    my $package = shift || caller();
+    my $package     = shift || caller;
     my $data_handle = $package . "::DATA";
-    my @files = split /^FILE:<(.+?)>.*$/m, join "", <$data_handle>;
-    $files = { @files[ 1 .. $#files ] };    # remove leading null element
-    return $files;
+    my @files       = split /^FILE:<(.+?)>.*$/m, join "", <$data_handle>;
+    close $data_handle;
+    shift @files;    # remove leading null element
+    return {@files};
 }
 
 sub findings_match {
@@ -35,7 +40,7 @@ sub findings_match {
     # the caller's package.  This will be used to make it look like they
     # exist in the file system by replacing
     # Test::DocClaims::Lines::_read_file().
-    if (!$files) {
+    if ( !$files ) {
         $files = files_from_data(caller);
     }
 
@@ -64,7 +69,7 @@ sub findings_match {
 
     # Check the findings against @expect.
     my $tb = Test::DocClaims->builder;
-    my $i = 0;
+    my $i  = 0;
     while ( @findings && @expect ) {
         my $finding = shift @findings;
         my $expect  = shift @expect;
@@ -90,7 +95,7 @@ sub findings_match {
             my $fail = $tb->ok( 0, $name );
             _diff( $tb, $i, $finding, $expect, \@findings );
             return $fail;
-        } elsif ( $finding ne $expect ) {
+        } elsif ( _cmp_no_white( $finding, $expect ) ) {
             my $fail = $tb->ok( 0, $name );
             _diff( $tb, $i, $finding, $expect, \@findings );
             return $fail;
@@ -107,6 +112,14 @@ sub findings_match {
         return $fail;
     }
     return $tb->ok( 1, $name );
+}
+
+sub _cmp_no_white {
+    my $a = shift;
+    my $b = shift;
+    $a =~ s/\s+$//;
+    $b =~ s/\s+$//;
+    return $a cmp $b;
 }
 
 # Generate the diff message when the two don't match.

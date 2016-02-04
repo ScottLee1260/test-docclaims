@@ -79,6 +79,8 @@ sub _diff_error {
             my $text = $line->text;
             push @error, "$prefix: '$text'";
             push @error, "at " . $line->path . " line " . $line->lnum;
+            ( $error[-1], $error[-2] ) = ( $error[-2], $error[-1] )
+                if $prefix =~ /got/;
         } else {
             push @error, "missing";
         }

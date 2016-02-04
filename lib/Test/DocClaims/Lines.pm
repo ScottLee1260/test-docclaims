@@ -58,7 +58,7 @@ sub _file_spec_to_list {
 #   has_pod true if it should be pares as POD
 #   test    true if it is a test file and may have "#@" and "@?" lines
 #   blank   true if blank lines are preserved
-#   white   true if amount of white space at beginnig of lines is preserved
+#   white   true if amount of white space at beginning of lines is preserved
 sub _attrs_of_file {
     my $self = shift;
     my $path = shift;
