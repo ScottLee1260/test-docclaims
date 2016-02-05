@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Pod::Usage;
+use File::Path qw< rmtree >;
 
 Getopt::Long::Configure(qw< bundling_override >);
 GetOptions(
@@ -13,35 +14,25 @@ GetOptions(
     'v+' => \( my $verbose = 0 ),
 ) or pod2usage(2);
 
-my @ignored_files = (
-    qr{make_release.pl},
-    qr{\.gitignore},
-);
+chdir "src" or die "cannot chdir src: $!\n";
 
 my $version = get_version();
 print "VERSION = '$version'\n";
 check_changes_file($version);
 
-my @list = list_files();
-foreach my $re (@ignored_files) {
-    @list = grep { $_ !~ /$re/ } @list;
-}
-push @list, "MANIFEST";
-print "Writing MANIFEST\n";
-open my $fh, ">", "MANIFEST" or die "cannot write MANIFEST: $!\n";
-print $fh "$_\n" foreach sort @list;
-close $fh;
-
+rmtree "Test-DocClaims-$version";
 unlink "Test-DocClaims-$version.tar";
 unlink "Test-DocClaims-$version.tar.gz";
-foreach my $cmd ( "perl Makefile.PL ", "make", "make test", "make dist" ) {
+foreach my $cmd (
+    "perl Makefile.PL ",
+    "make",
+    "make test",
+    "make manifest",
+    "make dist",
+    )
+{
     print "> $cmd\n";
     system $cmd and die "command failed\n";
-}
-
-sub list_files {
-    my $treeish = shift || "HEAD";
-    return map { chomp; $_ } `git ls-tree -r --name-only $treeish`;
 }
 
 sub get_version {
@@ -110,9 +101,9 @@ Print the full command manual entry.
 Make a new release of the CPAM module.
 It will:
 
-  regenerate the MANIFEST file
   determine the new version number
   make sure ./Changes has that version
+  regenerate the MANIFEST file
   make the *.tar.gz file.
 
 =cut
