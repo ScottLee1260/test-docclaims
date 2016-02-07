@@ -20,9 +20,14 @@ my $version = get_version();
 print "VERSION = '$version'\n";
 check_changes_file($version);
 
+print "Generating README\n";
+add_version( "../README", "README" );
+
 rmtree "Test-DocClaims-$version";
 unlink "Test-DocClaims-$version.tar";
 unlink "Test-DocClaims-$version.tar.gz";
+unlink "MANIFEST";
+unlink "MANIFEST.bak";
 foreach my $cmd (
     "perl Makefile.PL ",
     "make",
@@ -33,6 +38,15 @@ foreach my $cmd (
 {
     print "> $cmd\n";
     system $cmd and die "command failed\n";
+}
+
+sub add_version {
+    my $in  = shift;
+    my $out = shift;
+    my @text = map { $_ =~ s/\$VERSION\b/$version/g ; $_ } read_file($in);
+    open my $fh, ">", $out or die "cannot write $out: $!\n";
+    print $fh @text;
+    close $fh;
 }
 
 sub get_version {
@@ -102,8 +116,9 @@ Make a new release of the CPAM module.
 It will:
 
   determine the new version number
-  make sure ./Changes has that version
-  regenerate the MANIFEST file
+  make sure src/Changes has that version
+  regenerate the src/MANIFEST file
+  add the version number to the src/README file
   make the *.tar.gz file.
 
 =cut
