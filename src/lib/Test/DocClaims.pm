@@ -100,39 +100,84 @@ Test::DocClaims - Help assure that documentation claims are tested
 
 =head1 SYNOPSIS
 
-  use Test::DocClaims;
-  $foo = Test::DocClaims->new();
-  $foo->foo();
+  use Test::More;
+  eval "use Test::DocClaims";
+  plan skip_all => "Test::DocClaims required for testing documentation claims"
+    if $@;
+  plan tests => 1;
+  doc_claims( "t/MyModule.t", "lib/MyModule.pm", "doc claims" );
 
 =head1 DESCRIPTION
 
-=head2 States of the class
+A module should have documentation that defines its interface. All claims in
+that documentation should have corresponding tests to verify that they are
+true. Test::DocClaims is designed to help assure that those tests are written
+and maintained.
 
-=head2 States of the Object
+It would be great if software could read the documentation, enumerate all
+of the claims made and then read (or even write) the test suite to assure
+that those claims are properly tested.
+However, that level of Artificial Intelegence does not yet exist.
+So, humans must be trusted to enumerate the claims and write the tests.
 
-=head2 Methods, Functions and Operators
+How can Test::DocClaims help?
+As the code and its documentation evolve, the test suite can fall out of
+sync, no longer testing the new or modified claims.
+This is where Test::DocClaims can assist.
+This is done by copying the documentation into the test suite (as POD or
+comments) and below each claim write a test for that claim.
+Test::DocClaims compairs the documentation in the code with the documentation
+in the test suite and reports discrepencies.
+This will act as a trigger to remind the human to update the test suite.
+It is up to the human to actually edit the tests, not just the sync up the
+documentation.
+
+=head2 Functions
 
 =over 4
 
-=item new [ I<STRING> ]
+=item doc_claims I<TEST_SPEC> I<MODULE_SPEC> [ I<TEST_NAME>  ]
 
-This method creates a new object.
+Verify that the lines of documentation in TEST_SPEC match the ones in
+MODULE_SPEC.
+The TEST_SPEC and MODULE_SPEC arguments specify a list of one or more files.
+Each can be:
 
-=item tostring
+  - a string which is the path to a file relative to the test program
+  - a ref to a hash with these keys:
+    - path:    path to a file relative to the test program (required)
+    - type:    file type ("perl", "pod", "t" or "md") (optional)
+    - has_pod: true if the file can have POD (optional)
+    - test:    true if it is a test suite file (optional)
+    - blank:   true to preserve blank lines (optional)
+    - white:   true to preserve amount of white space at beginning of
+               lines (optional)
+  - a ref to an array, each element is a path or hash as above
 
-This method returns a string representation of the object.
+If a list of files is given, those files are precessen in order and the
+documentation in each is concatinated.
+This is useful when a module requires many tests that are best split into
+multiple files in the test suite.
+Note that the path mentioned above can also be a wildcard, which is expanded by the glob built-in function.
+For example:
 
-=item cmp I<PATH>
+  doc_claims("../lib/Foo.pm", "Foo-*.t");
 
-Like the cmp Perl built in, it returns -1, 0 or 1.
+If a wildcard is used, be sure that the generated list of files is in the
+correct order. It may be useful to number them (such as Foo-01-SYNOPSIS.t,
+Foo-02-DESCRIPTION.t, etc).
 
 =back
 
 =head1 SEE ALSO
 
+Test::Pod
+Test::Pod::Coverage
+Devel::Coverage
+
 =head1 AUTHOR
 
-Scott E. Lee, E<lt>ScottLee@cpan.org<gt>
+Scott E. Lee, E<lt>ScottLee@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
