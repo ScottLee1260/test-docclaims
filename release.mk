@@ -6,6 +6,7 @@ dist: version
 	make
 	make test
 	rm -rf $(PACKAGE)-[0-9]*
+	rm MANIFEST
 	make manifest
 	make dist
 	@echo ========== TESTING DIST ==========
