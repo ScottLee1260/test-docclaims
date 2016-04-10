@@ -1,11 +1,8 @@
 package Test::DocClaims::Line;
 
-# Copyright (c) 2009-2016 Scott E. Lee. All rights reserved.
-# This program my be used under the Perl License OR the MIT License.
-# This program is free software. You may copy or redistribute it under the
-# same terms as Perl itself.
+# Copyright (c) Scott E. Lee
 
-use 5.008;
+use 5.008009;
 use strict;
 use warnings;
 

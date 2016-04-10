@@ -10,7 +10,7 @@ use TestTester;
 BEGIN { use_ok("Test::DocClaims"); }
 
 findings_match( sub {
-    doc_claims( "t/90-DocClaims-Foo.t", "Something/Foo.pm", "run test" );
+    doc_claims( "Something/Foo.pm", "t/90-DocClaims-Foo.t", "run test" );
 }, [
     ["ok", "run test"],
 ]);

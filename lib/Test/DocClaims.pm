@@ -1,6 +1,6 @@
 package Test::DocClaims;
 
-# Copyright (C) 2009-2016 Scott E. Lee
+# Copyright (C) Scott E. Lee
 
 use 5.008009;
 use strict;
@@ -17,16 +17,16 @@ our @EXPORT = qw<
 >;
 
 sub doc_claims {
-    my ( $test_spec, $doc_spec, $name ) = @_;
+    my ( $doc_spec, $test_spec, $name ) = @_;
     $name = "documentations claims are tested" unless defined $name;
-    my $test = Test::DocClaims::Lines->new($test_spec);
     my $doc  = Test::DocClaims::Lines->new($doc_spec);
+    my $test = Test::DocClaims::Lines->new($test_spec);
     my @error;
     my ( $test_line, $doc_line );
     my @skipped_code;
     while (1) {
-        $test_line = $test->current_line;
         $doc_line  = $doc->current_line;
+        $test_line = $test->current_line;
 
         # Skip over the line if it is blank or is a non-POD line in a file
         # that supports POD.
@@ -96,16 +96,24 @@ __END__
 
 =head1 NAME
 
-Test::DocClaims - Help assure that documentation claims are tested
+Test::DocClaims - Help assure documentation claims are tested
 
 =head1 SYNOPSIS
 
   use Test::More;
   eval "use Test::DocClaims";
-  plan skip_all => "Test::DocClaims required for testing documentation claims"
-    if $@;
-  plan tests => 1;
-  doc_claims( "t/MyModule.t", "lib/MyModule.pm", "doc claims" );
+  plan skip_all => "Test::DocClaims not found" if $@;
+  plan tests => 2;
+  doc_claims( "lib/Foo/Bar.pm", "t/doc-Foo-Bar.t", "doc claims in Foo/Bar.pm" );
+  doc_claims( "lib/Foo/Bar/Baz.pm", "t/doc-Foo-Bar-Baz.t",
+    "doc claims in Foo/Bar/Baz.pm" );
+
+  # OR
+
+  use Test::More;
+  eval "use Test::DocClaims";
+  plan skip_all => "Test::DocClaims not found" if $@;
+  all_doc_claims();
 
 =head1 DESCRIPTION
 
@@ -117,7 +125,7 @@ and maintained.
 It would be great if software could read the documentation, enumerate all
 of the claims made and then read (or even write) the test suite to assure
 that those claims are properly tested.
-However, that level of Artificial Intelegence does not yet exist.
+However, that level of artificial intelligence does not yet exist.
 So, humans must be trusted to enumerate the claims and write the tests.
 
 How can Test::DocClaims help?
@@ -126,8 +134,8 @@ sync, no longer testing the new or modified claims.
 This is where Test::DocClaims can assist.
 This is done by copying the documentation into the test suite (as POD or
 comments) and below each claim write a test for that claim.
-Test::DocClaims compairs the documentation in the code with the documentation
-in the test suite and reports discrepencies.
+Test::DocClaims compares the documentation in the code with the documentation
+in the test suite and reports discrepancies.
 This will act as a trigger to remind the human to update the test suite.
 It is up to the human to actually edit the tests, not just the sync up the
 documentation.
@@ -136,36 +144,39 @@ documentation.
 
 =over 4
 
-=item doc_claims I<TEST_SPEC> I<MODULE_SPEC> [ I<TEST_NAME>  ]
+=item doc_claims I<MODULE_SPEC> I<TEST_SPEC> [ I<TEST_NAME>  ]
 
 Verify that the lines of documentation in TEST_SPEC match the ones in
 MODULE_SPEC.
 The TEST_SPEC and MODULE_SPEC arguments specify a list of one or more files.
-Each can be:
+Each of the arguments can be one of:
 
-  - a string which is the path to a file relative to the test program
+  - a string which is the path to a file or a wildcard which is
+    expanded by the glob built-in function.
   - a ref to a hash with these keys:
-    - path:    path to a file relative to the test program (required)
+    - path:    path or wildcard (required)
     - type:    file type ("perl", "pod", "t" or "md") (optional)
     - has_pod: true if the file can have POD (optional)
     - test:    true if it is a test suite file (optional)
     - blank:   true to preserve blank lines (optional)
     - white:   true to preserve amount of white space at beginning of
                lines (optional)
-  - a ref to an array, each element is a path or hash as above
+  - a ref to an array, where each element is a path, wildcard or hash
+    as above
 
-If a list of files is given, those files are precessen in order and the
-documentation in each is concatinated.
+If a list of files is given, those files are read in order and the
+documentation in each is concatenated.
 This is useful when a module requires many tests that are best split into
 multiple files in the test suite.
-Note that the path mentioned above can also be a wildcard, which is expanded by the glob built-in function.
 For example:
 
-  doc_claims("../lib/Foo.pm", "Foo-*.t");
+  doc_claims( "lib/Foo/Bar.pm", "t/Bar-*.t", "doc claims" );
 
 If a wildcard is used, be sure that the generated list of files is in the
 correct order. It may be useful to number them (such as Foo-01-SYNOPSIS.t,
 Foo-02-DESCRIPTION.t, etc).
+
+(TODO explain type, has_pod, test, etc.)
 
 =back
 

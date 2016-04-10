@@ -1,11 +1,8 @@
 package Test::DocClaims::Lines;
 
-# Copyright (c) 2009-2016 Scott E. Lee. All rights reserved.
-# This program my be used under the Perl License OR the MIT License.
-# This program is free software. You may copy or redistribute it under the
-# same terms as Perl itself.
+# Copyright (c) Scott E. Lee
 
-use 5.008;
+use 5.008009;
 use strict;
 use warnings;
 use Carp;
@@ -37,10 +34,30 @@ sub _file_spec_to_list {
     my $self = shift;
     my $arg  = shift;
     $arg = [$arg] unless ref $arg eq "ARRAY";
+
+    # Expand wildcards to a list of paths (or hashes), putting the results
+    # into @specs.
+    my @specs;
     foreach my $item (@$arg) {
         if ( ref $item eq "HASH" ) {
             croak "file spec is hash, but it has no 'path' key"
                 unless length $item->{path};
+            my @list = glob $item->{path};
+            croak "no such file ($item->{path})" unless @list;
+            foreach my $path (@list) {
+                push @specs, { %$item, path => $path };
+            }
+        } else {
+            my @list = glob $item;
+            croak "no such file ($item)" unless @list;
+            push @specs, @list;
+        }
+    }
+
+    # Convert each item in the list to a hash if it isn't already and fill
+    # in any missing attributes with default values.
+    foreach my $item (@specs) {
+        if ( ref $item eq "HASH" ) {
             my %default = $self->_attrs_of_file( $item->{path} );
             foreach my $key ( keys %default ) {
                 $item->{$key} = $default{$key} unless defined $item->{$key};
@@ -49,7 +66,7 @@ sub _file_spec_to_list {
             $item = { path => $item, $self->_attrs_of_file($item) };
         }
     }
-    return @$arg;
+    return @specs;
 }
 
 # Each attribute hash has at least these keys:
@@ -139,7 +156,6 @@ sub _add_file {
 
 sub _read_file {
     my $path = shift;
-    warn "??? _read_file('$path')\n";
     my @lines;
     if ( open my $fh, "<", $path ) {
         @lines = <$fh>;

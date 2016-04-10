@@ -3,3 +3,4 @@
 version
 release.mk
 Templ.MANIFEST.SKIP
+MANIFEST.SKIP

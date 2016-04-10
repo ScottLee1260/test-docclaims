@@ -15,7 +15,7 @@ our %files = %{ files_from_data() };
 local %files = %files;
 $files{"Something/Foo.pm"} =~ s/example Perl module/example Perl module./;
 findings_match( \%files, sub {
-    doc_claims( "t/90-DocClaims-Foo.t", "Something/Foo.pm", "run test" );
+    doc_claims( "Something/Foo.pm", "t/90-DocClaims-Foo.t", "run test" );
 }, [
     ["not ok", "run test"],
     "    at t/90-DocClaims-Foo.t line 10",
@@ -29,7 +29,7 @@ findings_match( \%files, sub {
 local %files = %files;
 $files{"t/90-DocClaims-Foo.t"} =~ s/example Perl module/example Perl module./;
 findings_match( \%files, sub {
-    doc_claims( "t/90-DocClaims-Foo.t", "Something/Foo.pm", "run test" );
+    doc_claims( "Something/Foo.pm", "t/90-DocClaims-Foo.t", "run test" );
 }, [
     ["not ok", "run test"],
     "    at t/90-DocClaims-Foo.t line 10",
