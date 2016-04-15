@@ -27,7 +27,7 @@ sub new {
             unless exists $self->{$k};
     }
     die "'file' key in " . __PACKAGE__ . "->new is not hash"
-        unless exists $self->{file};
+        unless exists $self->{file} && ref $self->{file} eq "HASH";
     foreach my $k (qw< path type has_pod >) {
         die "missing $k key in " . __PACKAGE__ . "->new file hash"
             unless exists $self->{file}{$k};
@@ -45,6 +45,8 @@ sub orig    { $_[0]->{orig} }
 sub comment { $_[0]->{comment} }
 sub is_pod  { $_[0]->{is_pod} }
 sub flag    { $_[0]->{flag} }
+
+sub is_doc  { $_[0]->is_pod || !$_[0]->has_pod }
 
 1;
 

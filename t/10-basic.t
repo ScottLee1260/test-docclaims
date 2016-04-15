@@ -109,3 +109,4 @@ isa_ok($foo, "Something::Foo", "constructor works");
 I was once told that all programs with more than ten lines have a bug.
 
 =cut
+

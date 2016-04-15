@@ -19,6 +19,7 @@ our @CARP_NOT = qw< Test::DocClaims >;
 sub new {
     my $class     = shift;
     my $file_spec = shift;
+    croak "missing arg to Test::DocClaims::Line->new" unless $file_spec;
     my $self      = bless {}, ref($class) || $class;
     $self->{lines}   = [];
     $self->{current} = 0;
@@ -129,12 +130,12 @@ sub _add_file {
             $flag = $f;
         } elsif ( $attrs->{has_pod} ) {
             $hash{is_pod} = $is_pod;
-            if ( $text =~ /^=(\w+)/ ) {
+            if ( $text =~ /^=([a-zA-Z]\S*)/ ) {
                 my $cmd = $1;
                 if ( $cmd eq "pod" ) {
                     $hash{is_pod} = 0;    # pod starts with next line
                     $is_pod = 1;
-                } elsif ( $cmd eq "cut" ) {
+                } elsif ( $cmd =~ /^cut/ ) {
                     $hash{is_pod} = 0;
                     $is_pod = 0;
                 } else {
@@ -174,6 +175,7 @@ sub is_eof {
 sub advance_line {
     my $self = shift;
     $self->{current}++;
+    return $self->current_line;
 }
 
 sub current_line {
