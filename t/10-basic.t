@@ -75,11 +75,9 @@ Something::Foo - An example Perl module
 
 =head1 SYNOPSIS
 
-  #@code
   use Something::Foo;
   $foo = Something::Foo->new();
   $foo->dosomething();
-  #@
 
 =head1 DESCRIPTION
 

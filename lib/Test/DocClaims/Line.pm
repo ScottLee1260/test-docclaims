@@ -10,7 +10,6 @@ use warnings;
 #   {text}     text of the line
 #   {path}     path of the file
 #   {lnum}     line number of the line
-#   {type}     type of text, eg "pod", "perl"
 #   {...}      other attributes
 
 use overload
@@ -28,7 +27,7 @@ sub new {
     }
     die "'file' key in " . __PACKAGE__ . "->new is not hash"
         unless exists $self->{file} && ref $self->{file} eq "HASH";
-    foreach my $k (qw< path type has_pod >) {
+    foreach my $k (qw< path has_pod >) {
         die "missing $k key in " . __PACKAGE__ . "->new file hash"
             unless exists $self->{file}{$k};
     }
@@ -36,7 +35,6 @@ sub new {
 }
 
 sub path    { $_[0]->{file}{path} }
-sub type    { $_[0]->{file}{type} }
 sub has_pod { $_[0]->{file}{has_pod} }
 
 sub lnum    { $_[0]->{lnum} }
@@ -46,7 +44,7 @@ sub comment { $_[0]->{comment} }
 sub is_pod  { $_[0]->{is_pod} }
 sub flag    { $_[0]->{flag} }
 
-sub is_doc  { $_[0]->is_pod || !$_[0]->has_pod }
+sub is_doc { $_[0]->is_pod || !$_[0]->has_pod }
 
 1;
 

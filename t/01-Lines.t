@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use lib "lib";
-use Test::More tests => 173;
+use Test::More tests => 141;
 
 BEGIN { use_ok('Test::DocClaims::Lines'); }
 can_ok('Test::DocClaims::Lines', 'new');
@@ -19,12 +19,8 @@ my @data = (
 [ 1,     "",    undef, ''],
 [ 0,     "",    undef, '=cut'],
 [ 0,     "",    undef, ''],
-[ 0,     "",     '#@', '#@   this is more POD'],
-[ 0,     "",     '#?', '#?   POD with no test written yet'],
 [ 0,     "",    undef, ''],
-[ 0, "code", '#@code', '  #@code'],
-[ 0, "code",    undef, '  use Bar;'],
-[ 0,     "",     '#@', '  #@'],
+[ 0,     "",    undef, '  use Bar;'],
 [ 0,     "",    undef, ''],
 [ 0,     "",    undef, 'sub example {'],
 [ 0,     "",    undef, '    return 42;'],

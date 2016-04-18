@@ -20,13 +20,30 @@ sub new {
     my $class     = shift;
     my $file_spec = shift;
     croak "missing arg to Test::DocClaims::Line->new" unless $file_spec;
-    my $self      = bless {}, ref($class) || $class;
+    my $self = bless {}, ref($class) || $class;
     $self->{lines}   = [];
     $self->{current} = 0;
     foreach my $attrs ( $self->_file_spec_to_list($file_spec) ) {
         $self->_add_file($attrs);
     }
     return $self;
+}
+
+sub is_eof {
+    my $self = shift;
+    return $self->{current} >= scalar( @{ $self->{lines} } );
+}
+
+sub advance_line {
+    my $self = shift;
+    $self->{current}++;
+    return $self->current_line;
+}
+
+sub current_line {
+    my $self = shift;
+    return undef if $self->is_eof;
+    return $self->{lines}[ $self->{current} ];
 }
 
 # Convert a file spec arg to a list of attribute hashes representing the
@@ -72,63 +89,35 @@ sub _file_spec_to_list {
 
 # Each attribute hash has at least these keys:
 #   path    the path of the file
-#   type    the type of the file, eg "perl", "pod", "t", etc.
 #   has_pod true if it should be pares as POD
-#   test    true if it is a test file and may have "#@" and "@?" lines
-#   blank   true if blank lines are preserved
 #   white   true if amount of white space at beginning of lines is preserved
 sub _attrs_of_file {
-    my $self = shift;
-    my $path = shift;
-    my %attrs;
+    my $self  = shift;
+    my $path  = shift;
+    my %attrs = (
+        has_pod => 0,
+        white   => 0,
+    );
     if ( $path =~ /\.p[lm]$/ ) {
-        $attrs{type}    = "perl";
         $attrs{has_pod} = 1;
-        $attrs{test}    = 0;
-        $attrs{blank}   = 0;
-        $attrs{white}   = 0;
     } elsif ( $path =~ /\.pod$/ ) {
-        $attrs{type}    = "pod";
         $attrs{has_pod} = 1;
-        $attrs{test}    = 0;
-        $attrs{blank}   = 0;
-        $attrs{white}   = 0;
     } elsif ( $path =~ /\.t$/ ) {
-        $attrs{type}    = "t";
         $attrs{has_pod} = 1;
-        $attrs{test}    = 1;
-        $attrs{blank}   = 0;
-        $attrs{white}   = 0;
-    } elsif ( $path =~ /\.md$/ ) {
-        $attrs{type}    = "md";
-        $attrs{has_pod} = 0;
-        $attrs{test}    = 0;
-        $attrs{blank}   = 0;
-        $attrs{white}   = 0;
-    } else {
-        $attrs{type}    = "";
-        $attrs{has_pod} = 0;
-        $attrs{test}    = 0;
-        $attrs{blank}   = 0;
-        $attrs{white}   = 0;
     }
     return %attrs;
 }
 
 sub _add_file {
-    my $self  = shift;
-    my $attrs = shift;
-    my $lines = _read_file($attrs->{path});
-    my $lnum  = 0;
+    my $self   = shift;
+    my $attrs  = shift;
+    my $lines  = _read_file( $attrs->{path} );
+    my $lnum   = 0;
     my $is_pod = 0;
-    my $flag = "";
+    my $flag   = "";
     foreach my $text (@$lines) {
         my %hash = ( orig => $text, lnum => ++$lnum );
-        if ( $attrs->{test} && $text =~ s/^\s*(#([@?])([a-z]*))( |$)// ) {
-            my ( $comment, $char2, $f ) = ( $1, $2, $3 );
-            $hash{comment} = $comment;
-            $flag = $f;
-        } elsif ( $attrs->{has_pod} ) {
+        if ( $attrs->{has_pod} ) {
             $hash{is_pod} = $is_pod;
             if ( $text =~ /^=([a-zA-Z]\S*)/ ) {
                 my $cmd = $1;
@@ -167,66 +156,4 @@ sub _read_file {
     return \@lines;
 }
 
-sub is_eof {
-    my $self = shift;
-    return $self->{current} >= scalar( @{ $self->{lines} } );
-}
-
-sub advance_line {
-    my $self = shift;
-    $self->{current}++;
-    return $self->current_line;
-}
-
-sub current_line {
-    my $self = shift;
-    return undef if $self->is_eof;
-    return $self->{lines}[ $self->{current} ];
-}
-
 1;
-
-__END__
-
-=head1 NAME
-
-Test::DocClaims::Lines - An example Perl module.
-
-=head1 SYNOPSIS
-
-  use Test::DocClaims::Lines;
-  $foo = Test::DocClaims::Lines->new();
-  $foo->foo();
-
-=head1 DESCRIPTION
-
-=head2 States of the class
-
-=head2 States of the Object
-
-=head2 Methods, Functions and Operators
-
-=over 4
-
-=item new [ I<STRING> ]
-
-This method creates a new object.
-
-=item tostring
-
-This method returns a string representation of the object.
-
-=item cmp I<PATH>
-
-Like the cmp Perl built in, it returns -1, 0 or 1.
-
-=back
-
-=head1 BUGS
-
-=head1 SEE ALSO
-
-=head1 COPYRIGHT
-
-Copyright (c) Scott E. Lee
-
