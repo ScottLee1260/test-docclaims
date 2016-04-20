@@ -25,7 +25,7 @@ is($line->text, "foo();");
 is($line->orig, "foo();\n");
 is($line->lnum, 1);
 is($line->comment, undef);
-ok(!$line->is_pod);
+ok(!$line->is_doc);
 
 eval {
     $line = Test::DocClaims::Line->new(

@@ -109,32 +109,55 @@ sub _attrs_of_file {
 }
 
 sub _add_file {
-    my $self   = shift;
-    my $attrs  = shift;
-    my $lines  = _read_file( $attrs->{path} );
-    my $lnum   = 0;
-    my $is_pod = 0;
-    my $flag   = "";
+    my $self     = shift;
+    my $attrs    = shift;
+    my $lines    = _read_file( $attrs->{path} );
+    my $lnum     = 0;
+    my $doc_mode = !$attrs->{has_pod};
+    my $code     = undef;
+    my $todo     = undef;
     foreach my $text (@$lines) {
         my %hash = ( orig => $text, lnum => ++$lnum );
+        my $this_line_doc;
         if ( $attrs->{has_pod} ) {
-            $hash{is_pod} = $is_pod;
-            if ( $text =~ /^=([a-zA-Z]\S*)/ ) {
-                my $cmd = $1;
+            if ( $text =~ /^=([a-zA-Z]\S*)(\s+(.*))?\s*$/ ) {
+                my ( $cmd, $cmd_text ) = ( $1, $2 );
+                $hash{is_doc} = 1;
+                $doc_mode = 1;
                 if ( $cmd eq "pod" ) {
-                    $hash{is_pod} = 0;    # pod starts with next line
-                    $is_pod = 1;
+                    $this_line_doc = 0;
                 } elsif ( $cmd =~ /^cut/ ) {
-                    $hash{is_pod} = 0;
-                    $is_pod = 0;
-                } else {
-                    $hash{is_pod} = 1;
-                    $is_pod = 1;
+                    my ( $format, $args ) = _parse_pod_command($cmd_text);
+                    $this_line_doc = 0;
+                    $doc_mode      = 0;
+                } elsif ( $cmd =~ /^begin/ ) {
+                    my ( $format, $args ) = _parse_pod_command($cmd_text);
+                    if ( $format eq "DC_CODE" ) {
+                        $this_line_doc = 0;
+                        $code          = $args;
+                    }
+                } elsif ( $cmd =~ /^end/ ) {
+                    my ( $format, $args ) = _parse_pod_command($cmd_text);
+                    if ( $format eq "DC_CODE" ) {
+                        $this_line_doc = 0;
+                        $code          = undef;
+                    }
+                } elsif ( $cmd =~ /^for/ ) {
+                    my ( $format, $args ) = _parse_pod_command($cmd_text);
+                    if ( $format eq "DC_TODO" ) {
+                        $this_line_doc = 0;
+                        $todo          = $args;
+                    }
                 }
-                $flag = "";
             }
         }
-        $hash{flag} = $flag;
+        if ( !defined $this_line_doc ) {
+            $this_line_doc = 1 if $code || $doc_mode;
+        }
+        $hash{is_doc} = $this_line_doc ? 1 : 0;
+        $hash{code}   = $code;
+        $hash{todo}   = $todo;
+        $todo         = undef;
         $text =~ s/\s+$//;    # remove CRLF, NL and trailing white space
         $text =~ s/^\s+/ / if !$attrs->{white};
         $hash{text} = $text;
@@ -142,6 +165,21 @@ sub _add_file {
         push @{ $self->{lines} }, Test::DocClaims::Line->new(%hash);
     }
     return $self;
+}
+
+sub _parse_pod_command {
+    my $text = shift;
+    my ( $format, %args );
+    if ( $text =~ /^\s*(\S+)(\s+(.*))?$/ ) {
+        $format = $1;
+        %args =
+            map { /^(.+?)=(.*)$/ ? ( $1 => $2 ) : ( $1 => 1 ) }
+            grep { length $_ }
+            split " ", $3 || "";
+    } else {
+        $format = "";
+    }
+    return ( $format, \%args );
 }
 
 sub _read_file {

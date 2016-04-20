@@ -21,6 +21,8 @@ our @EXPORT = qw<
 our $doc_file_re = qr/\.(pl|pm|pod|md)$/i;
 our @doc_ignore_list;
 
+our $TODO;
+
 =head1 NAME
 
 Test::DocClaims - Help assure documentation claims are tested
@@ -140,7 +142,7 @@ sub doc_claims {
     my $test = Test::DocClaims::Lines->new($test_spec);
     my @error;
     my ( $test_line, $doc_line );
-    my @skipped_code;
+    my $todo = 0;
     while ( !$doc->is_eof && !$test->is_eof ) {
         $doc_line  = $doc->current_line;
         $test_line = $test->current_line;
@@ -148,9 +150,7 @@ sub doc_claims {
         # Skip over the line if it is blank or is a non-POD line in a file
         # that supports POD.
         my $last = 0;
-        while ( ( $doc_line->has_pod && !$doc_line->is_pod )
-            || $doc_line->text =~ /^\s*$/ )
-        {
+        while ( !$doc_line->is_doc || $doc_line->text =~ /^\s*$/ ) {
             if ( $doc->advance_line ) {
                 $doc_line = $doc->current_line;
             } else {
@@ -158,10 +158,10 @@ sub doc_claims {
                 last;
             }
         }
-        while ( ( $test_line->has_pod && !$test_line->is_pod )
-            || $test_line->text =~ /^\s*$/ )
-        {
-            push @skipped_code, $test_line if $test_line->text =~ /\S/;
+        while ( !$test_line->is_doc || $test_line->text =~ /^\s*$/ ) {
+            if ( $test_line->todo ) {
+                $todo++;
+            }
             if ( $test->advance_line ) {
                 $test_line = $test->current_line;
             } else {
@@ -174,7 +174,6 @@ sub doc_claims {
         if ( $test_line->text eq $doc_line->text ) {
             $test->advance_line;
             $doc->advance_line;
-            @skipped_code = ();
         } else {
             my $tb = Test::DocClaims->builder;
             my $fail = $tb->ok( 0, $name );
@@ -189,7 +188,10 @@ sub doc_claims {
         return $fail;
     } else {
         my $tb = Test::DocClaims->builder;
-        return $tb->ok( 1, $name );
+    TODO: {
+            local $TODO = "$todo DC_TODO lines" if $todo;
+            return $tb->ok( $todo ? 0 : 1, $name );
+        }
     }
 }
 

@@ -41,10 +41,9 @@ sub lnum    { $_[0]->{lnum} }
 sub text    { $_[0]->{text} }
 sub orig    { $_[0]->{orig} }
 sub comment { $_[0]->{comment} }
-sub is_pod  { $_[0]->{is_pod} }
-sub flag    { $_[0]->{flag} }
-
-sub is_doc { $_[0]->is_pod || !$_[0]->has_pod }
+sub is_doc  { $_[0]->{is_doc} }
+sub code    { $_[0]->{code} }
+sub todo    { $_[0]->{todo} }
 
 1;
 

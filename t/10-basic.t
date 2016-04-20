@@ -75,9 +75,15 @@ Something::Foo - An example Perl module
 
 =head1 SYNOPSIS
 
+=begin DC_CODE
+
+=cut
+
   use Something::Foo;
   $foo = Something::Foo->new();
   $foo->dosomething();
+
+=end DC_CODE
 
 =head1 DESCRIPTION
 
