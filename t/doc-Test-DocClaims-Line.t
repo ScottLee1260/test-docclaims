@@ -2,37 +2,23 @@
 
 use strict;
 use warnings;
-use lib "lib";
-use Test::More tests => 2;
-use lib "t/lib";
-use TestTester;
+use Test::More tests => 1;
 
-BEGIN { use_ok("Test::DocClaims"); }
+BEGIN { use_ok('Test::DocClaims::Line'); }
 
 =head1 NAME
 
 Test::DocClaims::Line - An example Perl module.
 
+=for DC_TODO
+
 =head1 SYNOPSIS
 
- use Test::DocClaims::Line;
- $foo = Test::DocClaims::Line->new();
- $foo->foo();
+  use Test::DocClaims::Line;
+  $foo = Test::DocClaims::Line->new();
+  $foo->foo();
 
-=cut
-
- use Test::DocClaims::Line;
- my $foo = Test::DocClaims::Line->new(
- text => "",
- lnum => 1,
- orig => "",
- file => {
-     path => "foo",
-     type => "",
-     has_pod => 1,
- },
- );
- isa_ok( $foo, "Test::DocClaims::Line" );
+=for DC_TODO
 
 =head1 DESCRIPTION
 
@@ -48,13 +34,19 @@ Test::DocClaims::Line - An example Perl module.
 
 This method creates a new object.
 
+=for DC_TODO
+
 =item tostring
 
 This method returns a string representation of the object.
 
+=for DC_TODO
+
 =item cmp I<PATH>
 
 Like the cmp Perl built in, it returns -1, 0 or 1.
+
+=for DC_TODO
 
 =back
 
