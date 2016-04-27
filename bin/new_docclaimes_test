@@ -64,6 +64,7 @@ sub write_all {
                 $module =~ s{^\Q$lib_dir_abs/\E}{};
                 $module =~ s{/}{::}g;
                 $module =~ s{\.pm}{};
+
                 if ( -e $test_path && !$force ) {
                     warn "file already exists: $test_path\n";
                 } else {
@@ -102,6 +103,7 @@ sub generate_test {
     $output .= "\n";
     $output .= "BEGIN { use_ok('$module'); }\n";
     $output .= "\n";
+
     my $state = 0;
     while ( !$doc->is_eof ) {
         my $line = $doc->current_line;

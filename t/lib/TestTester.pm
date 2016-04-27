@@ -1,9 +1,6 @@
 package TestTester;
 
-# Copyright (c) 2XXX Scott E. Lee. All rights reserved.
-# This program my be used under the Perl License OR the MIT License.
-# This program is free software. You may copy or redistribute it under the
-# same terms as Perl itself.
+# Copyright (c) Scott E. Lee
 
 # How do you test a test module? Simple. Just override the methods in
 # Test::Builder used to report status and instead of printing the status,

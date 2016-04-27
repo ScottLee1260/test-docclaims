@@ -1,0 +1,16 @@
+- complete documentation
+- test with *.md files
+
+Some prior art that may be worth looking at:
+https://metacpan.org/pod/Test::Pod::Snippets
+https://metacpan.org/pod/POD::Tested
+https://metacpan.org/pod/Test::Synopsis
+https://metacpan.org/pod/Test::Synopsis::Expectation
+
+Yes, I saw them, and also https://metacpan.org/pod/Test::Inline
+
+Here's the original post with 1st version of Test::Doctest where its author
+explains how this approach is different from others.
+http://blog.crdlo.com/2010/04/doctests-for-perl.html
+
+vim: sw=2 ts=2 tw=75 expandtab smarttab

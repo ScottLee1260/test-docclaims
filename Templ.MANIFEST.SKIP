@@ -1,5 +1,8 @@
 #!include_default
 
+check-release.sh
+spellcheck.config
+TODO.txt
 version
 release.mk
 Templ.MANIFEST.SKIP
