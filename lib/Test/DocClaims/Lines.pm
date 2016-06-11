@@ -91,6 +91,7 @@ sub _file_spec_to_list {
 #   path    the path of the file
 #   has_pod true if it should be pares as POD
 #   white   true if amount of white space at beginning of lines is preserved
+# TODO remove white attribute
 sub _attrs_of_file {
     my $self  = shift;
     my $path  = shift;
