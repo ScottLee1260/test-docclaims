@@ -41,7 +41,7 @@ version: $(VERSION_FILES)
 version.source.pm: $(VERSION_SRC)
 	@echo extracting version from $<
 	@sed -n \
-	    's/.*\$$VERSION\s*=.*\([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/p' \
+	    's/^.*\$$VERSION\s*=[^0-9]*\([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/p' \
 	    $< > $@.tmp
 	@mv $@.tmp $@
 
@@ -52,7 +52,7 @@ version.Changes: Changes
 
 version.README: README
 	@echo extracting version from $<
-	@sed -n '1s/.*\([0-9][0-9]*\.[0-9][0-9.]*\) *$$/\1/p' $< > $@.tmp
+	@sed -n '1s/^[^0-9]*\([0-9][0-9]*\.[0-9][0-9.]*\) *$$/\1/p' $< > $@.tmp
 	@mv $@.tmp $@
 
 clean:
