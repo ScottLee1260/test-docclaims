@@ -10,6 +10,10 @@ package TestTester;
 use strict;
 use warnings;
 
+# Make sure it is loaded before we try to override its methods, otherwise
+# we will get a redefined error when it does load.
+use Test::DocClaims::Lines;
+
 use base qw( Exporter );
 our @EXPORT = qw< files_from_data findings_match >;
 
@@ -146,7 +150,9 @@ sub _diff {
 sub _diff_line {
     my $item = shift;
     if ( ref $item ) {
-        return "$item->[0] $item->[1]";
+        my $item1 = $item->[1];
+        $item1 = "" unless defined $item1;
+        return "$item->[0] $item1";
     } elsif ( defined $item ) {
         my $text = $item;
         $text =~ s/\s+$//;
