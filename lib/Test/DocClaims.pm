@@ -233,7 +233,17 @@ sub doc_claims {
         }
         last if $last;
 
-        if ( $test_line->text eq $doc_line->text ) {
+        my $test_text = $test_line->text;
+        my $doc_text  = $doc_line->text;
+        $test_text =~ s/\s+/ /g;
+        $doc_text  =~ s/\s+/ /g;
+        $test_text =~ s/\s+$//;
+        $doc_text  =~ s/\s+$//;
+        if ( $test_line->code ) {
+            $doc_text  =~ s/^\s+//;
+            $test_text =~ s/^\s+//;
+        }
+        if ( $test_text eq $doc_text ) {
             $test->advance_line;
             $doc->advance_line;
         } else {
@@ -243,6 +253,15 @@ sub doc_claims {
             return $fail;
         }
     }
+
+    # Ignore blank lines at the end of file.
+    while ( !$doc->is_eof && $doc->current_line =~ /^\s*$/ ) {
+        $doc->advance_line;
+    }
+    while ( !$test->is_eof && $test->current_line =~ /^\s*$/ ) {
+        $test->advance_line;
+    }
+
     if ( !$test->is_eof || !$doc->is_eof ) {
         my $tb = Test::DocClaims->builder;
         my $fail = $tb->ok( 0, $name );

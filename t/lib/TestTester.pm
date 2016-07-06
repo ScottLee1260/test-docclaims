@@ -17,16 +17,23 @@ use Test::DocClaims::Lines;
 use base qw( Exporter );
 our @EXPORT = qw< files_from_data findings_match >;
 
+# To prevent trying to read a __DATA__ section twice (which would fail)
+# save the data here when it is read.
+my %files_by_package;
+
 # Read a set of files from the __DATA__ section into a hash and return a
 # ref to this hash. This can be used as the first parameter to
 # findings_match().
 sub files_from_data {
     my $package     = shift || caller;
-    my $data_handle = $package . "::DATA";
-    my @files       = split /^FILE:<(.+?)>.*$/m, join "", <$data_handle>;
-    close $data_handle;
-    shift @files;    # remove leading null element
-    return {@files};
+    if ( !defined $files_by_package{$package} ) {
+        my $data_handle = $package . "::DATA";
+        my @files       = split /^FILE:<(.+?)>.*$/m, join "", <$data_handle>;
+        close $data_handle;
+        shift @files;    # remove leading null element
+        $files_by_package{$package} = { @files };
+    }
+    return { %{ $files_by_package{$package} } };
 }
 
 sub findings_match {
@@ -49,7 +56,15 @@ sub findings_match {
     # printing them.
     my @findings;
     {
-        my $ok = sub { push @findings, [ $_[1] ? "ok" : "not ok", $_[2] ]; };
+        my $ok = sub {
+            my $extra = "";
+            {
+                no strict "refs";
+                my $todo = ${ caller() . "::TODO" };
+                $extra .= " TODO[$todo]" if defined $todo;
+            }
+            push @findings, [ $_[1] ? "ok$extra" : "not ok$extra", $_[2] ];
+        };
         my $diag = sub { push @findings, @_[ 1 .. $#_ ] };
         my $read = sub {
             my $path = shift;
@@ -81,8 +96,10 @@ sub findings_match {
                 . " at $file line $line\n";
         }
         if ( ref $finding && ref $expect ) {
+            my $finding1 = $finding->[1];
+            $finding1 = "" if !defined $finding1;
             if (   $finding->[0] ne $expect->[0]
-                || $finding->[1] ne $expect->[1] )
+                || $finding1 ne $expect->[1] )
             {
                 my $fail = $tb->ok( 0, $name );
                 _diff( $tb, $i, $finding, $expect, \@findings );

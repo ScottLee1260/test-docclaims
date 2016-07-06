@@ -117,7 +117,11 @@ sub _add_file {
     my $doc_mode = !$attrs->{has_pod};
     my $code     = undef;
     my $todo     = undef;
+    my $in_data = 0;    # ignore TestTester files in __DATA__ section
+
     foreach my $text (@$lines) {
+        $in_data = 1 if $text =~ /^__(END|DATA)__$/;
+        last if $in_data && $text =~ /^FILE:<.*>-/;
         my %hash = ( orig => $text, lnum => ++$lnum );
         my $this_line_doc;
         if ( $attrs->{has_pod} ) {
