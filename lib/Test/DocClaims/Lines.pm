@@ -15,6 +15,7 @@ our @CARP_NOT = qw< Test::DocClaims >;
 # Keys in the blessed hash
 #   {lines}      array of Test::DocClaims::Line objects
 #   {current}    the current index into {lines}
+#   {paths}      list of paths and/or globs used to read the lines
 
 sub new {
     my $class     = shift;
@@ -23,6 +24,7 @@ sub new {
     my $self = bless {}, ref($class) || $class;
     $self->{lines}   = [];
     $self->{current} = 0;
+    $self->{paths}   = [];
     foreach my $attrs ( $self->_file_spec_to_list($file_spec) ) {
         $self->_add_file($attrs);
     }
@@ -46,6 +48,11 @@ sub current_line {
     return $self->{lines}[ $self->{current} ];
 }
 
+sub paths {
+    my $self = shift;
+    return @{ $self->{paths} };
+}
+
 # Convert a file spec arg to a list of attribute hashes representing the
 # files.
 sub _file_spec_to_list {
@@ -60,12 +67,14 @@ sub _file_spec_to_list {
         if ( ref $item eq "HASH" ) {
             croak "file spec is hash, but it has no 'path' key"
                 unless length $item->{path};
+            push @{ $self->{paths} }, "$item->{path}";
             my @list = glob $item->{path};
             croak "no such file ($item->{path})" unless @list;
             foreach my $path (@list) {
                 push @specs, { %$item, path => $path };
             }
         } else {
+            push @{ $self->{paths} }, "$item";
             my @list = glob $item;
             croak "no such file ($item)" unless @list;
             push @specs, @list;
@@ -89,7 +98,7 @@ sub _file_spec_to_list {
 
 # Each attribute hash has at least these keys:
 #   path    the path of the file
-#   has_pod true if it should be pares as POD
+#   has_pod true if it should be parsed as POD
 #   white   true if amount of white space at beginning of lines is preserved
 # TODO remove white attribute
 sub _attrs_of_file {
@@ -159,10 +168,11 @@ sub _add_file {
         if ( !defined $this_line_doc ) {
             $this_line_doc = 1 if $code || $doc_mode;
         }
-        $hash{is_doc} = $this_line_doc ? 1 : 0;
-        $hash{code}   = $code;
-        $hash{todo}   = $todo;
-        $todo         = undef;
+        $hash{is_doc}  = $this_line_doc ? 1 : 0;
+        #$hash{has_pod} = $attrs->{has_pod};
+        $hash{code}    = $code;
+        $hash{todo}    = $todo;
+        $todo          = undef;
         $text =~ s/\s+$//;    # remove CRLF, NL and trailing white space
         $text =~ s/^\s+/ / if !$attrs->{white};
         $hash{text} = $text;

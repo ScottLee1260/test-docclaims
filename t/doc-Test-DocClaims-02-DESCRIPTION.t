@@ -146,12 +146,14 @@ For example, this in the documentation POD
 
 my $source2 = <<'END_SOURCE';
 
+  =pod
+
 =begin DC_CODE
 
   The add function will add two numbers:
 
-    say add(1,2)             # 3
-    say add(50,100)          # 150
+    say add(1,2);            # 3
+    say add(50,100);         # 150
 
 =end DC_CODE
 
@@ -166,6 +168,8 @@ will match this in the test.
 =cut
 
 my $test2 = <<'END_TEST';
+
+  =pod
 
 =begin DC_CODE
 
@@ -187,14 +191,19 @@ my $test2 = <<'END_TEST';
 END_TEST
 
 # TODO say -> is() is not implemented yet
-$source2 =~ s/^=(begin|end).*//mg;
-$test2   =~ s/^=(begin|end).*//mg;
+#$source2 =~ s/^=(begin|end).*//mg;
+#$test2   =~ s/^=(begin|end).*//mg;
+$source2 =~ s/^=.*//mg;
+$test2   =~ s/^=.*//mg;
+$source2 =~ s/^  //mg;
+$test2   =~ s/^  //mg;
 findings_match( { "lib/Foo/Bar.pm" => $source2, "t/doc-Foo-Bar.t" => $test2 },
     sub {
-#        doc_claims( "lib/Foo/Bar.pm", "t/doc-Foo-Bar.t", "example w/say" );
+    local $ENV{DOCCLAIMS_TRACE} = 1;#???
+        doc_claims( "lib/Foo/Bar.pm", "t/doc-Foo-Bar.t", "example w/say" );
     },
     [
-#        [ "ok", "example w/say" ],
+        [ "ok", "example w/say" ],
     ]);
 
 =pod

@@ -140,8 +140,8 @@ For example, this in the documentation POD
 
   The add function will add two numbers:
 
-    say add(1,2)             # 3
-    say add(50,100)          # 150
+    say add(1,2);            # 3
+    say add(50,100);         # 150
 
 will match this in the test.
 
@@ -202,6 +202,8 @@ sub doc_claims {
     $name = "documentations claims are tested" unless defined $name;
     my $doc  = Test::DocClaims::Lines->new($doc_spec);
     my $test = Test::DocClaims::Lines->new($test_spec);
+    _dbg_file( "D", $doc );
+    _dbg_file( "T", $test );
     my @error;
     my ( $test_line, $doc_line );
     my $todo = 0;
@@ -213,6 +215,7 @@ sub doc_claims {
         # that supports POD.
         my $last = 0;
         while ( !$doc_line->is_doc || $doc_line->text =~ /^\s*$/ ) {
+            _dbg_line( "D", "s", $doc_line );
             if ( $doc->advance_line ) {
                 $doc_line = $doc->current_line;
             } else {
@@ -224,6 +227,7 @@ sub doc_claims {
             if ( $test_line->todo ) {
                 $todo++;
             }
+            _dbg_line( "T", "s", $test_line );
             if ( $test->advance_line ) {
                 $test_line = $test->current_line;
             } else {
@@ -233,20 +237,14 @@ sub doc_claims {
         }
         last if $last;
 
-        my $test_text = $test_line->text;
-        my $doc_text  = $doc_line->text;
-        $test_text =~ s/\s+/ /g;
-        $doc_text  =~ s/\s+/ /g;
-        $test_text =~ s/\s+$//;
-        $doc_text  =~ s/\s+$//;
-        if ( $test_line->code ) {
-            $doc_text  =~ s/^\s+//;
-            $test_text =~ s/^\s+//;
-        }
-        if ( $test_text eq $doc_text ) {
+        if ( _diff( $doc_line, $test_line ) ) {
+            _dbg_line( "D", "M", $doc_line );
+            _dbg_line( "T", "M", $test_line );
             $test->advance_line;
             $doc->advance_line;
         } else {
+            _dbg_line( "D", "X", $doc_line );
+            _dbg_line( "T", "X", $test_line );
             my $tb = Test::DocClaims->builder;
             my $fail = $tb->ok( 0, $name );
             _diff_error( $test_line, $doc_line, $name );
@@ -256,9 +254,11 @@ sub doc_claims {
 
     # Ignore blank lines at the end of file.
     while ( !$doc->is_eof && $doc->current_line =~ /^\s*$/ ) {
+        _dbg_line( "D", "e", $doc->current_line );
         $doc->advance_line;
     }
     while ( !$test->is_eof && $test->current_line =~ /^\s*$/ ) {
+        _dbg_line( "T", "e", $test->current_line );
         $test->advance_line;
     }
 
@@ -274,6 +274,66 @@ sub doc_claims {
             return $tb->ok( $todo ? 0 : 1, $name );
         }
     }
+}
+
+# For debugging only.
+sub _dbg_file {
+    if ( $ENV{DOCCLAIMS_TRACE} ) {
+        my $letter = shift;
+        my $file   = shift;
+        my $path   = join " ", $file->paths;
+        print STDERR "$letter ----- $path\n";
+    }
+}
+
+# For debugging only.
+sub _dbg_line {
+    if ( $ENV{DOCCLAIMS_TRACE} ) {
+        my $letter = shift;
+        my $action = shift;
+        my $line   = shift;
+        my $text   = $line->text;
+        my $isdoc  = $line->is_doc ? "d" : ".";
+        my $iscode = $line->code ? "c" : ".";
+        print STDERR "$letter:$isdoc$iscode$action '$text'\n";
+    }
+}
+
+# Given doc and test Test::DocClaims::Line objects, return true if they
+# match. This takes white space rules, etc. into account.
+sub _diff {
+    my $doc_line  = shift;
+    my $test_line = shift;
+    my $doc       = $doc_line->text;
+    my $test      = $test_line->text;
+    $doc  =~ s/\s+/ /g;
+    $test =~ s/\s+/ /g;
+    $doc  =~ s/\s+$//;
+    $test =~ s/\s+$//;
+    if ( $test_line->code ) {
+        $doc  =~ s/^\s+//;
+        $test =~ s/^\s+//;
+    }
+    return 1 if $test eq $doc;
+
+    # Allow "print" and "say" to match "is".
+    if (
+           $test_line->code
+        && $doc =~ /
+            ^ \s* (print|say) \s* (.+?) \s* ; \s+ \# \s* (.+?) \s* $
+            /x
+        )
+    {
+        my ( $left, $right ) = ( $2, $3 );
+        $left =~ s/ ^ \( \s* (.*?) \s* \) $ /$1/x;    # remove ()
+        return 1 if $test =~ /^ is \s* \(? \s*
+            \Q$left\E \s* , \s*
+            \Q$right\E \s*
+            ( , .* )?
+            \)? \s* ;
+            $/x;
+    }
+    return 0;
 }
 
 sub _diff_error {
