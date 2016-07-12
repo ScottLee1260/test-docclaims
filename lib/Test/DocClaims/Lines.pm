@@ -169,7 +169,7 @@ sub _add_file {
             $this_line_doc = 1 if $code || $doc_mode;
         }
         $hash{is_doc}  = $this_line_doc ? 1 : 0;
-        #$hash{has_pod} = $attrs->{has_pod};
+        $hash{has_pod} = $attrs->{has_pod};
         $hash{code}    = $code;
         $hash{todo}    = $todo;
         $todo          = undef;

@@ -190,16 +190,12 @@ my $test2 = <<'END_TEST';
 
 END_TEST
 
-# TODO say -> is() is not implemented yet
-#$source2 =~ s/^=(begin|end).*//mg;
-#$test2   =~ s/^=(begin|end).*//mg;
 $source2 =~ s/^=.*//mg;
 $test2   =~ s/^=.*//mg;
 $source2 =~ s/^  //mg;
 $test2   =~ s/^  //mg;
 findings_match( { "lib/Foo/Bar.pm" => $source2, "t/doc-Foo-Bar.t" => $test2 },
     sub {
-    local $ENV{DOCCLAIMS_TRACE} = 1;#???
         doc_claims( "lib/Foo/Bar.pm", "t/doc-Foo-Bar.t", "example w/say" );
     },
     [

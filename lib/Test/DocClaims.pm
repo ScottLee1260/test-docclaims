@@ -207,6 +207,7 @@ sub doc_claims {
     my @error;
     my ( $test_line, $doc_line );
     my $todo = 0;
+
     while ( !$doc->is_eof && !$test->is_eof ) {
         $doc_line  = $doc->current_line;
         $test_line = $test->current_line;
@@ -299,6 +300,33 @@ sub _dbg_line {
     }
 }
 
+# A list of diff routines to handle special cases for lines in a DC_CODE
+# section. In the future other keys will be added to this hash that match
+# words at the end of the DC_CODE directive.
+our %code_diff = (
+    "" => [
+        sub {
+            my ( $doc, $test ) = @_;
+            if (
+                $doc =~ /
+                    ^ \s* (print|say) \s* (.+?) \s* ; \s+ \# \s* (.+?) \s* $
+                    /x
+                )
+            {
+                my ( $left, $right ) = ( $2, $3 );
+                $left =~ s/ ^ \( \s* (.*?) \s* \) $ /$1/x;    # remove ()
+                return 1 if $test =~ /^ is \s* \(? \s*
+                    \Q$left\E \s* , \s*
+                    \Q$right\E \s*
+                    ( , .* )?
+                    \)? \s* ;
+                    $/x;
+            }
+            return 0;
+        },
+    ],
+);
+
 # Given doc and test Test::DocClaims::Line objects, return true if they
 # match. This takes white space rules, etc. into account.
 sub _diff {
@@ -316,23 +344,11 @@ sub _diff {
     }
     return 1 if $test eq $doc;
 
-    # Allow "print" and "say" to match "is".
-    if (
-           $test_line->code
-        && $doc =~ /
-            ^ \s* (print|say) \s* (.+?) \s* ; \s+ \# \s* (.+?) \s* $
-            /x
-        )
-    {
-        my ( $left, $right ) = ( $2, $3 );
-        $left =~ s/ ^ \( \s* (.*?) \s* \) $ /$1/x;    # remove ()
-        return 1 if $test =~ /^ is \s* \(? \s*
-            \Q$left\E \s* , \s*
-            \Q$right\E \s*
-            ( , .* )?
-            \)? \s* ;
-            $/x;
+    # Try special diff routines for DC_CODE sections.
+    foreach my $subr ( @{ $code_diff{""} } ) {
+        return 1 if $subr->( $doc, $test );
     }
+
     return 0;
 }
 
