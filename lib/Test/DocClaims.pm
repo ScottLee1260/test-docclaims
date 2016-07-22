@@ -199,7 +199,7 @@ Foo-02-DESCRIPTION.t, etc).
 
 sub doc_claims {
     my ( $doc_spec, $test_spec, $name ) = @_;
-    $name = "documentations claims are tested" unless defined $name;
+    $name = "documentation claims are tested" unless defined $name;
     my $doc  = Test::DocClaims::Lines->new($doc_spec);
     my $test = Test::DocClaims::Lines->new($test_spec);
     _dbg_file( "D", $doc );

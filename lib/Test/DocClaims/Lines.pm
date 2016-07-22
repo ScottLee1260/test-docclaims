@@ -68,14 +68,16 @@ sub _file_spec_to_list {
             croak "file spec is hash, but it has no 'path' key"
                 unless length $item->{path};
             push @{ $self->{paths} }, "$item->{path}";
-            my @list = glob $item->{path};
+            my @list = _glob( $item->{path} );
+            @list = sort @list;
             croak "no such file ($item->{path})" unless @list;
             foreach my $path (@list) {
                 push @specs, { %$item, path => $path };
             }
         } else {
             push @{ $self->{paths} }, "$item";
-            my @list = glob $item;
+            my @list = _glob($item);
+            @list = sort @list;
             croak "no such file ($item)" unless @list;
             push @specs, @list;
         }
@@ -94,6 +96,13 @@ sub _file_spec_to_list {
         }
     }
     return @specs;
+}
+
+# This wrapper for the glob function can be overridden at run time (by the
+# TestTester module), where the system glob can only be overridden at
+# compile time.
+sub _glob {
+    return glob( $_[0] );
 }
 
 # Each attribute hash has at least these keys:

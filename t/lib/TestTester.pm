@@ -25,13 +25,16 @@ my %files_by_package;
 # ref to this hash. This can be used as the first parameter to
 # findings_match().
 sub files_from_data {
-    my $package     = shift || caller;
+    my $package = shift || caller;
     if ( !defined $files_by_package{$package} ) {
         my $data_handle = $package . "::DATA";
-        my @files       = split /^FILE:<(.+?)>.*$/m, join "", <$data_handle>;
+        my $text;
+        eval { local $/; $text = <$data_handle>; };
+        die "No __DATA__ section in " . ( caller(1) )[1] unless defined $text;
+        my @files = split /^FILE:<(.+?)>.*$/m, $text;
         close $data_handle;
         shift @files;    # remove leading null element
-        $files_by_package{$package} = { @files };
+        $files_by_package{$package} = {@files};
     }
     return { %{ $files_by_package{$package} } };
 }
@@ -75,11 +78,34 @@ sub findings_match {
             }
         };
 
+        # This version of glob looks at the files in %$files instead of the
+        # file system.
+        my $glob = sub {
+            my $pattern = shift;
+            my $re = "";
+            while (1) {
+                if ( $pattern =~ s/^(\[.*?\])// ) {
+                    $re .= $1;
+                } elsif ( $pattern =~ s/^\?// ) {
+                    $re .= '[^\/]';
+                } elsif ( $pattern =~ s/^\*// ) {
+                    $re .= '[^\/]*';
+                } elsif ( $pattern =~ s/^([^[?*]+)// ) {
+                    $re .= quotemeta($1);
+                } else {
+                    die "internal error, pattern='$pattern' re='$re'";
+                }
+                last unless length $pattern;
+            }
+            return grep { $_ =~ /^$re$/ } keys %$files;
+        };
+
         no strict "refs";
         no warnings "redefine";
         local *{"Test::Builder::ok"}                  = $ok;
         local *{"Test::Builder::diag"}                = $diag;
         local *{"Test::DocClaims::Lines::_read_file"} = $read;
+        local *{"Test::DocClaims::Lines::_glob"}      = $glob;
         $test_subr->();
     }
 
