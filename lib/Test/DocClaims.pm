@@ -428,12 +428,13 @@ sub all_doc_claims {
     my $tb       = Test::DocClaims->builder;
     $tb->plan( tests => scalar @docs );
     foreach my $doc_file (@docs) {
-        my $test_file = _find_tests( $doc_file, $test_arg );
+        my $doc_path = ref $doc_file ? $doc_file->{path} : $doc_file;
+        my $test_file = _find_tests( $doc_path, $test_arg );
         if ( length $test_file ) {
-            doc_claims( $doc_file, $test_file, "doc claims in $doc_file" );
+            doc_claims( $doc_file, $test_file, "doc claims in $doc_path" );
         } else {
-            $tb->ok( 0, "doc claims in $doc_file" );
-            $tb->diag("    no tests file(s) found");
+            $tb->ok( 0, "doc claims in $doc_path" );
+            $tb->diag("    no test file(s) found for $doc_path");
         }
     }
 }
@@ -443,23 +444,43 @@ sub _find_docs {
     $dirs = [qw< lib bin scripts >] unless defined $dirs;
     $dirs = [$dirs] unless ref $dirs;
     my @files;
+    foreach my $path ( _list_files($dirs) ) {
+        if ( $path =~ m/$doc_file_re/ ) {
+            push @files, $path;
+        } elsif ( _read_first_block($path) =~ /^#!.*perl/i ) {
+            push @files, { path => $path, has_pod => 1 };
+        }
+    }
+    return sort @files;
+}
+
+# Given a list of files and/or directories, search them and return a list
+# of all existing files.
+sub _list_files {
+    my $dirs = shift;
+    my @files;
     find(
         {
-            wanted => sub {
-                return if -l $_ || !-f $_;
-                my $path = $_;
-                if ( $path =~ m/$doc_file_re/ ) {
-                    push @files, $path
-                        unless grep { $path =~ /$_/ } @doc_ignore_list;
-                }
-            },
-            no_chdir => 1
+            wanted => sub { push @files, $_ if -f $_; },
+            no_chdir => 1,
         },
-        grep {
-            -e $_
-        } @$dirs
+        grep { -e $_ } @$dirs
     );
-    return sort @files;
+    return @files;
+}
+
+# Return the first block of data from a file. This is used for checking the
+# first line for #!perl. But, because it reads a fixed amount will not
+# cause issues if the file is binary.
+sub _read_first_block {
+    my $path = shift;
+    my $data = "";
+    if ( open my $fh, "<", $path ) {
+        binmode $fh;
+        read( $fh, $data, 4096 );
+        close $fh;
+    }
+    return $data;
 }
 
 sub _find_tests {
@@ -485,23 +506,30 @@ sub _find_tests {
     # interprets a space to mean separation of multiple patterns unless the
     # pattern is quoted.
     foreach my $dir (@$dirs) {
-        foreach
-            my $pat (qw< doc-PATH-[0-9]*.t doc-PATH.t PATH-[0-9]*.t PATH.t >)
-        {
-
-            foreach my $name (@names) {
+        foreach my $name (@names) {
+            foreach my $pat (
+                qw< doc-PATH-[0-9]*.t doc-PATH.t PATH-[0-9]*.t PATH.t >)
+            {
                 ( my $pattern = $pat ) =~ s/PATH/$name/;
                 $pattern = "$dir/$pattern";
-                if ( $pat =~ /[*]/ ) {
-                    my @list = glob "'$pattern'";
-                    return "'$pattern'" if @list;
-                } elsif ( -f $pattern ) {
-                    return "'$pattern'";
-                }
+                my @list = _glob($pattern);
+                return "'$pattern'" if @list;
             }
         }
     }
     return "";
+}
+
+# This wrapper for the glob function can be overridden at run time (by the
+# TestTester module), where the system glob can only be overridden at
+# compile time.
+sub _glob {
+    my $pattern = shift;
+    if ( $pattern =~ /[*]/ ) {
+        return glob("'$pattern'");
+    } else {
+        return -f $pattern ? ($pattern) : ();
+    }
 }
 
 =head1 SEE ALSO

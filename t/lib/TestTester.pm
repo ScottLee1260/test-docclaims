@@ -77,12 +77,23 @@ sub findings_match {
                 die "cannot read $path: No such file or directory\n";
             }
         };
+        my $list = sub {
+            my $dirs = shift;
+            my $re   = join "|", map { ( "\Q$_\E\$", "\Q$_\E/" ) } @$dirs;
+            $re = qr/^($re)/;
+            my @files;
+            foreach my $path ( keys %$files ) {
+                push @files, $path if $path =~ /$re/;
+            }
+            return @files;
+        };
 
         # This version of glob looks at the files in %$files instead of the
         # file system.
         my $glob = sub {
             my $pattern = shift;
             my $re = "";
+            $pattern =~ s/^'|'$//g;
             while (1) {
                 if ( $pattern =~ s/^(\[.*?\])// ) {
                     $re .= $1;
@@ -100,12 +111,15 @@ sub findings_match {
             return grep { $_ =~ /^$re$/ } keys %$files;
         };
 
-        no strict "refs";
         no warnings "redefine";
-        local *{"Test::Builder::ok"}                  = $ok;
-        local *{"Test::Builder::diag"}                = $diag;
-        local *{"Test::DocClaims::Lines::_read_file"} = $read;
-        local *{"Test::DocClaims::Lines::_glob"}      = $glob;
+        local *Test::Builder::ok                  = $ok;
+        local *Test::Builder::diag                = $diag;
+        local *Test::DocClaims::Lines::_read_file = $read;
+        local *Test::DocClaims::Lines::_glob      = $glob;
+        local *Test::DocClaims::_list_files       = $list;
+        local *Test::DocClaims::_read_first_block = $read;
+        local *Test::DocClaims::_glob             = $glob;
+        local *Test::Builder::plan                = sub {};
         $test_subr->();
     }
 

@@ -2,10 +2,12 @@
 
 use strict;
 use warnings;
-use Test::More;
+use Test::More tests => 2;
 
 use lib "t/lib";
 use TestTester;
+
+use Test::DocClaims;
 
 =pod
 
