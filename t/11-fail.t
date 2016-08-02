@@ -18,10 +18,10 @@ findings_match( \%files, sub {
     doc_claims( "Something/Foo.pm", "t/90-DocClaims-Foo.t", "run test" );
 }, [
     ["not ok", "run test"],
-    "    at t/90-DocClaims-Foo.t line 10",
+    "    at t/90-DocClaims-Foo.t line 9",
     "         got: 'Something::Foo - An example Perl module'",
     "    expected: 'Something::Foo - An example Perl module.'",
-    "    at Something/Foo.pm line 9",
+    "    at Something/Foo.pm line 8",
 ]);
 }
 
@@ -32,10 +32,10 @@ findings_match( \%files, sub {
     doc_claims( "Something/Foo.pm", "t/90-DocClaims-Foo.t", "run test" );
 }, [
     ["not ok", "run test"],
-    "    at t/90-DocClaims-Foo.t line 10",
+    "    at t/90-DocClaims-Foo.t line 9",
     "         got: 'Something::Foo - An example Perl module.'",
     "    expected: 'Something::Foo - An example Perl module'",
-    "    at Something/Foo.pm line 9",
+    "    at Something/Foo.pm line 8",
 ]);
 }
 

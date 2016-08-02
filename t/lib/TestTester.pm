@@ -9,17 +9,28 @@ package TestTester;
 
 use strict;
 use warnings;
+use Carp;
 
 # Make sure it is loaded before we try to override its methods, otherwise
 # we will get a redefined error when it does load.
 use Test::DocClaims::Lines;
 
 use base qw( Exporter );
-our @EXPORT = qw< files_from_data findings_match >;
+our @EXPORT = qw< files_from_data findings_match plan_count reset_plan_count >;
 
 # To prevent trying to read a __DATA__ section twice (which would fail)
 # save the data here when it is read.
 my %files_by_package;
+
+our $plan_count;
+
+sub plan_count {
+    return defined $plan_count ? $plan_count : "no plan";
+}
+
+sub reset_plan_count {
+    undef $plan_count;
+}
 
 # Read a set of files from the __DATA__ section into a hash and return a
 # ref to this hash. This can be used as the first parameter to
@@ -31,7 +42,7 @@ sub files_from_data {
         my $text;
         eval { local $/; $text = <$data_handle>; };
         die "No __DATA__ section in " . ( caller(1) )[1] unless defined $text;
-        my @files = split /^FILE:<(.+?)>.*$/m, $text;
+        my @files = split /^FILE:<(.+?)>.*\r?\n/m, $text;
         close $data_handle;
         shift @files;    # remove leading null element
         $files_by_package{$package} = {@files};
@@ -74,7 +85,15 @@ sub findings_match {
             if ( exists $files->{$path} ) {
                 return [ split /^/m, $files->{$path} ];
             } else {
-                die "cannot read $path: No such file or directory\n";
+                die "cannot read $path: No such __DATA__ file\n";
+            }
+        };
+        my $block1 = sub {
+            my $path = shift;
+            if ( exists $files->{$path} ) {
+                return $files->{$path};
+            } else {
+                die "cannot read $path: No such __DATA__ file\n";
             }
         };
         my $list = sub {
@@ -87,13 +106,17 @@ sub findings_match {
             }
             return @files;
         };
+        my $plan = sub {
+            croak "planned twice" if defined $plan_count;
+            $plan_count = $_[2];
+        };
 
         # This version of glob looks at the files in %$files instead of the
         # file system.
         my $glob = sub {
             my $pattern = shift;
             my $re = "";
-            $pattern =~ s/^'|'$//g;
+            $pattern =~ s/^'|'$//g; # TODO why is this needed?
             while (1) {
                 if ( $pattern =~ s/^(\[.*?\])// ) {
                     $re .= $1;
@@ -117,9 +140,9 @@ sub findings_match {
         local *Test::DocClaims::Lines::_read_file = $read;
         local *Test::DocClaims::Lines::_glob      = $glob;
         local *Test::DocClaims::_list_files       = $list;
-        local *Test::DocClaims::_read_first_block = $read;
+        local *Test::DocClaims::_read_first_block = $block1;
         local *Test::DocClaims::_glob             = $glob;
-        local *Test::Builder::plan                = sub {};
+        local *Test::Builder::plan                = $plan;
         $test_subr->();
     }
 

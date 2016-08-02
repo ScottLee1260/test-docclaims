@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 2;
+use Test::More tests => 7;
 
 use lib "t/lib";
 use TestTester;
@@ -23,13 +23,26 @@ documentation file with the suffix removed (e.g., .pm or .pl) and slashes
 (/) converted to dashes (-).
 The patterns are tried in this order until one matches.
 
-=for DC_TODO
+  doc-PATH-[0-9]*.t
+  doc-PATH.t
+  PATH-[0-9]*.t
+  PATH.t
+
+If none of the patterns match, the left most directory of the PATH is
+removed and the patterns are tried again.
+This is repeated until a match is found or the PATH is exhausted.
+If the pattern patches multiple files, these files are processed in
+alphabetical order and their documentation is concatenated to match against
+the documentation file.
 
 =cut
+
+is( plan_count(), "no plan" );
 
 findings_match( sub {
     all_doc_claims();
 }, [
+    ["ok", "doc claims in bin/dosomething.pl"],
     ["ok", "doc claims in lib/Foo/Bar01.pm"],
     ["ok", "doc claims in lib/Foo/Bar02.pm"],
     ["ok", "doc claims in lib/Foo/Bar03.pm"],
@@ -42,55 +55,50 @@ findings_match( sub {
     ["ok", "doc claims in lib/Foo/Bar10.pm"],
     ["ok", "doc claims in lib/Foo/Bar11.pm"],
     ["ok", "doc claims in lib/Foo/Bar12.pm"],
+    ["ok", "doc claims in scripts/util.pl"],
 ]);
 
+is( plan_count(), 14 );
+reset_plan_count();
+
 =pod
-
-  doc-PATH-[0-9]*.t
-  doc-PATH.t
-  PATH-[0-9]*.t
-  PATH.t
-
-=for DC_TODO
-
-If none of the patterns match, the left most directory of the PATH is
-removed and the patterns are tried again.
-This is repeated until a match is found or the PATH is exhausted.
-If the pattern patches multiple files, these files are processed in
-alphabetical order and their documentation is concatenated to match against
-the documentation file.
-
-=for DC_TODO
 
 If I<DOC_DIRS> is missing or undef, its default value of
 [qw< lib bin scripts >] is used.
 If I<TEST_DIRS> is missing or undef, its default value of
 [qw< t >] is used.
 
-=for DC_TODO
-
 When searching for documentation files, any file with one of these suffixes
 is used:
-
-=for DC_TODO
 
    *.pl
    *.pm
    *.pod
    *.md
 
-=for DC_TODO
-
 Also, any file who's first line matches /^#!.*perl/i is used.
-
-=for DC_TODO
 
 The number of tests run is determined by the number of documentation files
 found.
 Do not set the number of tests before calling all_doc_claims because it
 will do that automatically.
 
-=for DC_TODO
+=cut
+
+is( plan_count(), "no plan" );
+
+findings_match( sub {
+    all_doc_claims( [ "dir2" ], [ "t2" ] );
+}, [
+    ["ok", "doc claims in dir2/Foo1.pm"],
+    ["ok", "doc claims in dir2/Foo2.pl"],
+    ["ok", "doc claims in dir2/Foo3.pod"],
+    ["ok", "doc claims in dir2/Foo4.md"],
+    ["ok", "doc claims in dir2/Foo7"],
+]);
+
+is( plan_count(), 5 );
+reset_plan_count();
 
 =head1 SEE ALSO
 
@@ -119,10 +127,24 @@ at your option, any later version of Perl 5 you may have available.
 
 __DATA__
 
-  doc-PATH-[0-9]*.t
-  doc-PATH.t
-  PATH-[0-9]*.t
-  PATH.t
+FILE:<bin/dosomething.pl>------------------------------
+=head2 dosomething
+FILE:<scripts/util.pl>------------------------------
+=head2 util 1
+=head2 util 2
+=head2 util 3
+=head2 util 4
+
+FILE:<t/bin-dosomething.t>------------------------------
+=head2 dosomething
+FILE:<t/scripts-util-1.t>------------------------------
+=head2 util 1
+FILE:<t/scripts-util-2.t>------------------------------
+=head2 util 2
+FILE:<t/scripts-util-3.t>------------------------------
+=head2 util 3
+FILE:<t/scripts-util-4.t>------------------------------
+=head2 util 4
 
 FILE:<lib/Foo/Bar01.pm>------------------------------
 =head2 Bar01
@@ -316,4 +338,37 @@ FILE:<t/Bar11.t>-------------------------------
 
 FILE:<t/Bar12.t>-------------------------------
 =head2 Bar12
+
+
+
+FILE:<dir2/Foo1.pm>-------------------------------
+=head2 dir2/Foo1.pm
+FILE:<dir2/Foo2.pl>-------------------------------
+=head2 dir2/Foo2.pl
+FILE:<dir2/Foo3.pod>-------------------------------
+=head2 dir2/Foo3.pod
+FILE:<dir2/Foo4.md>-------------------------------
+=head2 dir2/Foo4.md
+FILE:<dir2/Foo5.other>-------------------------------
+=head2 dir2/Foo5.other
+FILE:<dir2/Foo6>-------------------------------
+=head2 dir2/Foo6
+FILE:<dir2/Foo7>-------------------------------
+#!perl
+=head2 dir2/Foo7
+
+FILE:<t2/Foo1.t>-------------------------------
+=head2 dir2/Foo1.pm
+FILE:<t2/Foo2.t>-------------------------------
+=head2 dir2/Foo2.pl
+FILE:<t2/Foo3.t>-------------------------------
+=head2 dir2/Foo3.pod
+FILE:<t2/Foo4.t>-------------------------------
+=head2 dir2/Foo4.md
+FILE:<t2/Foo5.t>-------------------------------
+=head2 dir2/Foo5.other
+FILE:<t2/Foo6.t>-------------------------------
+=head2 dir2/Foo6
+FILE:<t2/Foo7.t>-------------------------------
+=head2 dir2/Foo7
 

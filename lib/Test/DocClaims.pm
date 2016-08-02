@@ -444,14 +444,14 @@ sub _find_docs {
     $dirs = [qw< lib bin scripts >] unless defined $dirs;
     $dirs = [$dirs] unless ref $dirs;
     my @files;
-    foreach my $path ( _list_files($dirs) ) {
+    foreach my $path ( sort { $a cmp $b } _list_files($dirs) ) {
         if ( $path =~ m/$doc_file_re/ ) {
             push @files, $path;
         } elsif ( _read_first_block($path) =~ /^#!.*perl/i ) {
             push @files, { path => $path, has_pod => 1 };
         }
     }
-    return sort @files;
+    return @files;
 }
 
 # Given a list of files and/or directories, search them and return a list
