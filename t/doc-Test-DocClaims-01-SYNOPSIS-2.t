@@ -42,7 +42,7 @@ findings_match( sub {
 # The example code above plans two tests, but findings_match() intercepts the
 # tests so it can verify them. findings_match() actually only performs one
 # test, so this provides the second test so Test::More will be happy. It might
-# be better of findings_match() ran the code in a subtest, but this works for
+# be better if findings_match() ran the code in a subtest, but this works for
 # now.
 ok 1;
 

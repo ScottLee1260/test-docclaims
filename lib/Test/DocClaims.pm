@@ -302,25 +302,33 @@ sub _dbg_line {
 
 # A list of diff routines to handle special cases for lines in a DC_CODE
 # section. In the future other keys will be added to this hash that match
-# words at the end of the DC_CODE directive.
+# words at the end of the DC_CODE directive. The ones under the "" key are
+# tried on every line.
 our %code_diff = (
     "" => [
         sub {
             my ( $doc, $test ) = @_;
             if (
                 $doc =~ /
-                    ^ \s* (print|say) \s* (.+?) \s* ; \s+ \# \s* (.+?) \s* $
-                    /x
+                ^ \s* (print|say) \s* (.+?) \s* ; \s+ \# \s* (.+?) \s* $
+                /x
                 )
             {
                 my ( $left, $right ) = ( $2, $3 );
-                $left =~ s/ ^ \( \s* (.*?) \s* \) $ /$1/x;    # remove ()
-                return 1 if $test =~ /^ is \s* \(? \s*
-                    \Q$left\E \s* , \s*
-                    \Q$right\E \s*
+                $left  =~ s/ ^ \( \s* (.*?) \s* \) $ /$1/x;    # remove ()
+                $right =~ s/^"(.*)"$/$1/;
+                $right =~ s/^'(.*)'$/$1/;
+                if (
+                    $test =~ /^
+                    \s* is \s* \(? \s* \Q$left\E \s*
+                    , \s* ["']? \Q$right\E \s* ["']? \s*
                     ( , .* )?
-                    \)? \s* ;
-                    $/x;
+                    \s* \)? \s* ;
+                    /x
+                    )
+                {
+                    return 1;
+                }
             }
             return 0;
         },

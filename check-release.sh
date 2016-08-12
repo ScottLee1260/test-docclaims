@@ -2,7 +2,7 @@
 
 perl Makefile.PL
 make
-gvimtidy `find lib -name '*.p[lm]'` bin/*
+gvimtidy `find lib bin t -name '*.p[lm]'`
 echo "==================== spellcheck ===================="
 spellcheck Changes Makefile.PL README `find lib bin t -type f`
 echo "==================== debug ===================="

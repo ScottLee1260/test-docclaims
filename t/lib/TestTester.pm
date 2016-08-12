@@ -16,7 +16,13 @@ use Carp;
 use Test::DocClaims::Lines;
 
 use base qw( Exporter );
-our @EXPORT = qw< files_from_data findings_match plan_count reset_plan_count >;
+our @EXPORT = qw<
+    files_from_data
+    fake_files
+    findings_match
+    plan_count
+    reset_plan_count
+>;
 
 # To prevent trying to read a __DATA__ section twice (which would fail)
 # save the data here when it is read.
@@ -44,10 +50,79 @@ sub files_from_data {
         die "No __DATA__ section in " . ( caller(1) )[1] unless defined $text;
         my @files = split /^FILE:<(.+?)>.*\r?\n/m, $text;
         close $data_handle;
-        shift @files;    # remove leading null element
+        shift @files;    # remove text before first file
+        push @files, "" if scalar(@files) % 2;    # if last file empty
         $files_by_package{$package} = {@files};
     }
     return { %{ $files_by_package{$package} } };
+}
+
+# Make Test::DocClaims take its files from a hash representing a "fake"
+# filesystem used for testing.  The subroutine argument is executed in an
+# environment where the I/O in Test::DocClaims is overridden with code that
+# only looks in this hash. The hash is by default read from the __DATA__
+# section.
+sub fake_files {
+    my $test_subr = shift;
+    my $files     = shift;
+    if ( !$files ) {
+        $files = files_from_data(caller);
+    }
+
+    my $read = sub {
+        my $path = shift;
+        if ( exists $files->{$path} ) {
+            return [ split /^/m, $files->{$path} ];
+        } else {
+            die "cannot read $path: No such __DATA__ file\n";
+        }
+    };
+    my $block1 = sub {
+        my $path = shift;
+        if ( exists $files->{$path} ) {
+            return $files->{$path};
+        } else {
+            die "cannot read $path: No such __DATA__ file\n";
+        }
+    };
+    my $list = sub {
+        my $dirs = shift;
+        my $re = join "|", map { ( "\Q$_\E\$", "\Q$_\E/" ) } @$dirs;
+        $re = qr/^($re)/;
+        my @files;
+        foreach my $path ( keys %$files ) {
+            push @files, $path if $path =~ /$re/;
+        }
+        return @files;
+    };
+    my $glob = sub {
+        my $pattern = shift;
+        my $re      = "";
+        $pattern =~ s/^'|'$//g;    # TODO why is this needed?
+        while (1) {
+            if ( $pattern =~ s/^(\[.*?\])// ) {
+                $re .= $1;
+            } elsif ( $pattern =~ s/^\?// ) {
+                $re .= '[^\/]';
+            } elsif ( $pattern =~ s/^\*// ) {
+                $re .= '[^\/]*';
+            } elsif ( $pattern =~ s/^([^[?*]+)// ) {
+                $re .= quotemeta($1);
+            } else {
+                die "internal error, pattern='$pattern' re='$re'";
+            }
+            last unless length $pattern;
+        }
+        return grep { $_ =~ /^$re$/ } keys %$files;
+    };
+
+    no warnings "redefine";
+    local *Test::DocClaims::Lines::_read_file = $read;
+    local *Test::DocClaims::Lines::_glob      = $glob;
+    local *Test::DocClaims::_list_files       = $list;
+    local *Test::DocClaims::_read_first_block = $block1;
+    local *Test::DocClaims::_glob             = $glob;
+    $test_subr->();
 }
 
 sub findings_match {
@@ -80,70 +155,16 @@ sub findings_match {
             push @findings, [ $_[1] ? "ok$extra" : "not ok$extra", $_[2] ];
         };
         my $diag = sub { push @findings, @_[ 1 .. $#_ ] };
-        my $read = sub {
-            my $path = shift;
-            if ( exists $files->{$path} ) {
-                return [ split /^/m, $files->{$path} ];
-            } else {
-                die "cannot read $path: No such __DATA__ file\n";
-            }
-        };
-        my $block1 = sub {
-            my $path = shift;
-            if ( exists $files->{$path} ) {
-                return $files->{$path};
-            } else {
-                die "cannot read $path: No such __DATA__ file\n";
-            }
-        };
-        my $list = sub {
-            my $dirs = shift;
-            my $re   = join "|", map { ( "\Q$_\E\$", "\Q$_\E/" ) } @$dirs;
-            $re = qr/^($re)/;
-            my @files;
-            foreach my $path ( keys %$files ) {
-                push @files, $path if $path =~ /$re/;
-            }
-            return @files;
-        };
         my $plan = sub {
             croak "planned twice" if defined $plan_count;
             $plan_count = $_[2];
         };
 
-        # This version of glob looks at the files in %$files instead of the
-        # file system.
-        my $glob = sub {
-            my $pattern = shift;
-            my $re = "";
-            $pattern =~ s/^'|'$//g; # TODO why is this needed?
-            while (1) {
-                if ( $pattern =~ s/^(\[.*?\])// ) {
-                    $re .= $1;
-                } elsif ( $pattern =~ s/^\?// ) {
-                    $re .= '[^\/]';
-                } elsif ( $pattern =~ s/^\*// ) {
-                    $re .= '[^\/]*';
-                } elsif ( $pattern =~ s/^([^[?*]+)// ) {
-                    $re .= quotemeta($1);
-                } else {
-                    die "internal error, pattern='$pattern' re='$re'";
-                }
-                last unless length $pattern;
-            }
-            return grep { $_ =~ /^$re$/ } keys %$files;
-        };
-
         no warnings "redefine";
-        local *Test::Builder::ok                  = $ok;
-        local *Test::Builder::diag                = $diag;
-        local *Test::DocClaims::Lines::_read_file = $read;
-        local *Test::DocClaims::Lines::_glob      = $glob;
-        local *Test::DocClaims::_list_files       = $list;
-        local *Test::DocClaims::_read_first_block = $block1;
-        local *Test::DocClaims::_glob             = $glob;
-        local *Test::Builder::plan                = $plan;
-        $test_subr->();
+        local *Test::Builder::ok   = $ok;
+        local *Test::Builder::diag = $diag;
+        local *Test::Builder::plan = $plan;
+        fake_files( $test_subr, $files );
     }
 
     # Check the findings against @expect.

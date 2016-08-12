@@ -224,7 +224,7 @@ match the POD in the test file.
 For these files, leading white space is ignored.
 This allows a leading space to be added in the POD if necessary.
 
-=for DC_TODO
+=for DC_TODO *.md support
 
 =cut
 

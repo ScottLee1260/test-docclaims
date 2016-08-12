@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use lib "lib";
-use Test::More tests => 173;
+use Test::More tests => 152;
 
 BEGIN { use_ok('Test::DocClaims::Lines'); }
 can_ok('Test::DocClaims::Lines', 'new');
@@ -47,7 +47,6 @@ foreach my $entry (@data) {
     ok(!$lines->is_eof, "is_eof $where");
     $line = $lines->current_line;
     isa_ok($line, "Test::DocClaims::Line", "isa_ok $where");
-    is($line->orig, $expect . "\n", "orig $where");
     is(!!$line->has_pod, !!1, "has_pod $where");
     is(!!$line->is_doc, !!$is_doc, "is_doc $where");
     is_deeply($line->code, $code, "code $where");

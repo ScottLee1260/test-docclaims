@@ -17,6 +17,55 @@ our @CARP_NOT = qw< Test::DocClaims >;
 #   {current}    the current index into {lines}
 #   {paths}      list of paths and/or globs used to read the lines
 
+=head1 NAME
+
+Test::DocClaims::Lines - Represent lines form one of more files
+
+=head1 SYNOPSIS
+
+  use Test::DocClaims::Lines;
+  my $lines = Test::DocClaims::Lines->new("t/Foo*.t");
+  my %files;
+  while ( !$lines->is_eof ) {
+      my $line = $lines->current_line;
+      $files{ $line->path }[ $line->lnum - 1 ] = $line->text;
+      $lines->advance_line;
+  }
+
+=head1 DESCRIPTION
+
+This holds a collection of lines from one or more files.
+The file path and line number of each line is recorded as well as
+other attributes of both the file and the individual lines.
+For example, it records whether a file supports POD documentation
+and whether each line is POD documentation or not.
+Each line in the list is represented as a Test::DocClaims::Line object.
+
+There is a concept of current line.
+This can be used to step through the lines sequentially.
+
+=head1 CONSTRUCTOR
+
+=head2 new I<FILE_SPEC>
+
+The I<FILE_SPEC> argument specifies a list of one or more files.
+It can be one of:
+
+  - a string which is the path to a file or a wildcard which is
+    expanded by the glob built-in function.
+  - a ref to a hash with these keys:
+    - path:    path or wildcard (required)
+    - has_pod: true if the file can have POD (optional)
+  - a ref to an array, where each element is a path, wildcard or hash
+    as above
+
+If a list of files is given, those files are read in order and the
+lines in each are concatenated.
+If a wildcard expands to more than one file they are read in the order
+returned by the glob built-in.
+
+=cut
+
 sub new {
     my $class     = shift;
     my $file_spec = shift;
@@ -31,10 +80,26 @@ sub new {
     return $self;
 }
 
+=head1 ACCESSORS
+
+=head2 is_eof
+
+This returns true if the end of the lines has been reached.
+
+=cut
+
 sub is_eof {
     my $self = shift;
     return $self->{current} >= scalar( @{ $self->{lines} } );
 }
+
+=head2 advance_line
+
+This advances to the next line and returns the Test::DocClaims::Line
+object for that line.
+If there is no next line, undef is returned.
+
+=cut
 
 sub advance_line {
     my $self = shift;
@@ -42,11 +107,26 @@ sub advance_line {
     return $self->current_line;
 }
 
+=head2 current_line
+
+Return the current line, a Test::DocClaims::Line object.
+If there is no current line because the end has been reached, undef is
+returned.
+
+=cut
+
 sub current_line {
     my $self = shift;
     return undef if $self->is_eof;
     return $self->{lines}[ $self->{current} ];
 }
+
+=head2 paths
+
+Return a list of strings for the paths and/or globs used to read the file
+or files.
+
+=cut
 
 sub paths {
     my $self = shift;
@@ -218,4 +298,11 @@ sub _read_file {
     return \@lines;
 }
 
+=head1 COPYRIGHT
+
+Copyright (c) Scott E. Lee
+
+=cut
+
 1;
+
