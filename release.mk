@@ -22,9 +22,7 @@ dist: version
 # because the file will not exist at the time the macro is defined.
 VERSION_FILES = version.source.pm version.Changes version.README
 version: $(VERSION_FILES)
-	@if md5sum $(VERSION_FILES) | sed 's/ .*//' | \
-	    sort | uniq -c | grep '^ *3 ' ; \
-	then \
+	@if [ 1 = `sort -u $(VERSION_FILES) | wc -l` ] ; then \
 	    echo versions match ; \
 	    sort -u $(VERSION_FILES) > $@ ; \
 	    rm -f $(VERSION_FILES) ; \
@@ -34,7 +32,7 @@ version: $(VERSION_FILES)
 	    exit 1 ; \
 	fi
 
-# The following rules extract the version number form files that have it. This
+# The following rules extract the version number from files that have it. This
 # is to make sure that they are updated with each new release and that the
 # version numbers match.
 
