@@ -9,7 +9,7 @@ use Carp;
 use File::Find;
 
 use Test::DocClaims::Lines;
-our $VERSION = '0.01';
+our $VERSION = '0.001';
 
 use Test::Builder::Module;
 our @ISA    = qw< Test::Builder::Module >;
